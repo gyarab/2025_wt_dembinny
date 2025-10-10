@@ -1,4 +1,6 @@
-# **Margaret Hamilton: Průkopnice softwarového inženýrství**
+# **Margaret Hamilton:**
+
+> **Průkopnice softwarového inženýrství**
 
 Margaret Hamilton je americká počítačová vědkyně, systémová inženýrka a podnikatelka, která je často označována za osobu, jež zavedla termín "softwarové inženýrství". Nezapomenutelně se zapsala do historie jako ředitelka oddělení softwarového inženýrství v Instrumentation Laboratory na MIT, kde vedla vývoj palubního letového softwaru pro program Apollo. Její průkopnická práce byla klíčová pro úspěšné přistání člověka na Měsíci.
 
