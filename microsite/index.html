@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="cs" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ErrorShop - Kup si chybu</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom fixed-top">
+            <div class="container">
+                <a class="navbar-brand" href="#hero">
+                    <i class="bi bi-bug-fill text-danger"></i>
+                    ErrorShop
+                </a>
+
+                <a href="#kosik" class="nav-link ms-auto me-3 d-lg-none">
+                    <i class="bi bi-cart-fill fs-5"></i>
+                    <span id="cart-count-mobile" class="badge rounded-pill bg-danger align-text-top">0</span>
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#hlavniMenu" aria-controls="hlavniMenu" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <div class="collapse navbar-collapse" id="hlavniMenu">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#hero">Úvod</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#nejcastejsi">Nejčastější koupě</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#legendarni">Legendární nabídka</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#darek">Koupit jako dárek</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#recenze">Recenze</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#kosik">Košík</a>
+                        </li>
+                    </ul>
+
+                    <a href="#kosik" class="nav-link d-none d-lg-block">
+                        <i class="bi bi-cart-fill fs-4"></i>
+                        <span id="cart-count-desktop" class="badge rounded-pill bg-danger align-text-top">0</span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+
+        <section id="hero" class="text-center">
+            <h1 class="display-3 fw-bold">ErrorShop</h1>
+            <p class="lead col-lg-8 mx-auto">
+                Už vás nebaví psát kód, který funguje? Kupte si prémiovou, ručně vyrobenou chybu, která vám zaručeně zničí víkend. Jsme tu pro vás 24/7... hlavně když to nejvíc hoří a blíží se deadline.
+            </p>
+        </section>
+
+        <section id="nejcastejsi">
+            <h2 class="display-5 text-center fw-bold">Nejčastější koupě</h2>
+            <div class="row mt-4">
+                
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="card h-100 shadow">
+                        <div class="card-body d-flex flex-column">
+                            <h3 class="card-title h4 code-text">Chyba 404</h3>
+                            <p class="card-text">"Page Not Found". Klasika. Perfektní pro odkazy, o kterých jste si byli 100% jistí, že existují. Zákazníci milují hledání neexistujících stránek.</p>
+                            <button class="btn btn-danger mt-auto add-to-cart" data-product-name="Chyba 404" data-price="404">Koupit za 404 Kč</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="card h-100 shadow">
+                        <div class="card-body d-flex flex-column">
+                            <h3 class="card-title h4 code-text">Integer Out Of Range</h3>
+                            <p class="card-text">Proč se omezovat? Náš <code class="code-text">Integer</code> přetéká už při malých číslech. Skvělé pro finanční aplikace a počítání skóre ve hrách.</p>
+                            <button class="btn btn-danger mt-auto add-to-cart" data-product-name="Integer Out Of Range" data-price="32768">Koupit za 32 768 Kč</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="card h-100 shadow">
+                        <div class="card-body d-flex flex-column">
+                            <h3 class="card-title h4 code-text">NullPointerException</h3>
+                            <p class="card-text">Elegance v prázdnotě. Zaručeně se objeví v té nejkritičtější části vašeho kódu, obvykle při páteční prezentaci klientovi. Náš bestseller.</p>
+                            <button class="btn btn-danger mt-auto add-to-cart" data-product-name="NullPointerException" data-price="999">Koupit za 999 Kč</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="card h-100 shadow">
+                        <div class="card-body d-flex flex-column">
+                            <h3 class="card-title h4 code-text">NaN</h3>
+                            <p class="card-text">Protože "Not a Number" je taky tak trochu číslo. Vynikající pro jakékoliv matematické výpočty, které mají dávat smysl. Bonus: <code class="code-text">NaN === NaN</code> je false!</p>
+                            <button class="btn btn-danger mt-auto add-to-cart" data-product-name="NaN" data-price="123">Koupit za 123 Kč</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="legendarni">
+            <h2 class="display-5 text-center fw-bold">Legendární nabídka</h2>
+            
+            <div class="row align-items-center bg-body-secondary p-3 rounded mb-3 shadow-sm">
+                <div class="col-md-3 text-center">
+                    <i class="bi bi-file-code-fill display-1 text-danger"></i>
+                </div>
+                <div class="col-md-6">
+                    <h3 class="code-text">undefined is not a function</h3>
+                    <p>Přesně tak. Není. A my vám zaručíme, že na to budete při ladění koukat celé odpoledne. Zjistíte, že voláte něco, co jste si mysleli, že je funkce, ale... není.</p>
+                </div>
+                <div class="col-md-3 text-center">
+                    <button class="btn btn-danger btn-lg add-to-cart" data-product-name="undefined is not a function" data-price="799">Koupit za 799 Kč</button>
+                </div>
+            </div>
+
+            <div class="row align-items-center bg-body-secondary p-3 rounded mb-3 shadow-sm">
+                <div class="col-md-3 text-center">
+                    <i class="bi bi-braces-asterisk display-1 text-danger"></i>
+                </div>
+                <div class="col-md-6">
+                    <h3 class="code-text">[object Object]</h3>
+                    <p>Chcete elegantně zobrazit data? Místo toho dostanete tohle. Náš balíček <code class="code-text">[object Object]</code> zaručí, že se nikdy nedozvíte, co v tom objektu vlastně bylo. Ideální pro alerty.</p>
+                </div>
+                <div class="col-md-3 text-center">
+                    <button class="btn btn-danger btn-lg add-to-cart" data-product-name="[object Object]" data-price="599">Koupit za 599 Kč</button>
+                </div>
+            </div>
+
+            <div class="row align-items-center bg-body-secondary p-3 rounded mb-3 shadow-sm">
+                <div class="col-md-3 text-center">
+                    <i class="bi bi-stack-overflow display-1 text-danger"></i>
+                </div>
+                <div class="col-md-6">
+                    <h3 class="code-text">Stack Overflow</h3>
+                    <p>Nekonečná rekurze je nejlepší rekurze. Sledujte, jak vám paměť přetéká rychleji, než stihnete říct "sakra, kde je ta ukončovací podmínka?".</p>
+                </div>
+                <div class="col-md-3 text-center">
+                    <button class="btn btn-danger btn-lg add-to-cart" data-product-name="Stack Overflow" data-price="1999">Koupit za 1 999 Kč</button>
+                </div>
+            </div>
+
+        </section>
+
+        <section id="darek">
+            <h2 class="display-5 text-center fw-bold">Koupit jako dárek</h2>
+            <div class="row align-items-center bg-dark p-4 rounded shadow">
+                <div class="col-md-8">
+                    <p class="lead">Kupte chybu kámošovi do kódu, ať se nenudí a ať ví, že na něj taky někdo myslí. Nic neřekne "mám tě rád" víc, než <code class="code-text">Segmentation Fault</code> v pátek v pět odpoledne. Stačí zadat jeho GitHub repozitář a my se postaráme o zbytek.</p>
+                    <button class="btn btn-lg btn-outline-danger">Objednat pekelný dárek</button>
+                </div>
+                <div class="col-md-4 text-center p-4 d-none d-md-block">
+                    <i class="bi bi-gift-fill display-1 text-danger"></i>
+                    <p class="code-text mt-2">&lt;!-- Skrytá chyba zde --&gt;</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="recenze">
+            <h2 class="display-5 text-center fw-bold">Recenze</h2>
+            <div class="row mt-4">
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-body-secondary border-secondary">
+                        <div class="card-body">
+                            <blockquote class="blockquote mb-0">
+                                <p>"Velmi funkční chyby. Jejich odstraňování bylo velmi zábavné!"</p>
+                                <footer class="blockquote-footer">Vojta <cite title="Source Title">(spokojený zákazník)</cite></footer>
+                            </blockquote>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-body-secondary border-secondary">
+                        <div class="card-body">
+                            <blockquote class="blockquote mb-0">
+                                <p>"Konečně <code class="code-text">IndentationError</code>, na který jsem se mohl spolehnout. Zničilo mi to celý build."</p>
+                                <footer class="blockquote-footer">Pythonista92 <cite title="Source Title">(nadšený uživatel)</cite></footer>
+                            </blockquote>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-body-secondary border-secondary">
+                        <div class="card-body">
+                            <blockquote class="blockquote mb-0">
+                                <p>"10/10. Koupil jsem si <code class="code-text">CORS policy</code> problém a nemohl jsem se 3 dny připojit k vlastnímu API."</p>
+                                <footer class="blockquote-footer">Franta Frontend <cite title="Source Title">(věrný zákazník)</cite></footer>
+                            </blockquote>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="kosik">
+            <h2 class="display-5 text-center fw-bold">Check out (Košík)</h2>
+            <div class="row">
+                <div class="col-lg-7">
+                    <h3 class="h4">Položky ve vašem pekle:</h3>
+                    <ul class="list-group" id="cart-items-list">
+                        <li id="empty-cart-message" class="list-group-item">Váš košík je zatím podezřele funkční...</li>
+                    </ul>
+                    <div class="d-flex justify-content-end align-items-center mt-3 p-3 bg-body-secondary rounded">
+                        <span class="fs-4 me-3">Celkem:</span>
+                        <span class="fs-3 fw-bold code-text" id="cart-total-price">0 Kč</span>
+                    </div>
+                </div>
+
+                <div class="col-lg-5 mt-4 mt-lg-0">
+                    <h3 class="h4">Doručovací údaje:</h3>
+                    <form>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" placeholder="vas.email@debugger.com">
+                        </div>
+                        <div class="mb-3">
+                            <label for="jmeno" class="form-label">Jméno (nebo přezdívka)</label>
+                            <input type="text" class="form-control" id="jmeno" placeholder="Ctrl+C Válečník">
+                        </div>
+                        <div class="mb-3">
+                            <label for="github" class="form-label">GitHub adresa doručení</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-github"></i></span>
+                                <input type="text" class="form-control" id="github" placeholder="https://github.com/vas-projekt">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="karta" class="form-label">Číslo a pin karty (na vlastní nebezpečí)</label>
+                            <input type="text" class="form-control" id="karta" placeholder="1234 5678 9101 1121 / PIN: 1234">
+                        </div>
+                        <button type="submit" class="btn btn-danger btn-lg w-100">Koupit a zničit si den</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="container text-center text-body-secondary py-5">
+        <p>&copy; 2025 ErrorShop. Všechny chyby vyhrazeny. <br> Provozováno na <code class="code-text">localhost:8080</code> (protože deployment selhal).</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
