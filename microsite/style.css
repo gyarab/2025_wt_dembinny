@@ -1,0 +1,43 @@
+/* Globální odsazení sekcí, aby nebyly nalepené pod navigací */
+section {
+    padding-top: 100px;
+    padding-bottom: 50px;
+}
+
+/* Odsazení pro první sekci (hero), která je hned pod navigací */
+#hero {
+    padding-top: 120px;
+    min-height: 50vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Vlastní "code" styl, který je výraznější */
+.code-text {
+    color: var(--bs-danger-text-emphasis);
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: bold;
+}
+
+/* Zajištění, aby karty ve "Nejčastější koupě" měly stejnou výšku */
+.card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.card-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-body .btn {
+    margin-top: auto; /* Tlačí tlačítko na dno karty */
+}
+
+/* Tlačítka v košíku */
+.cart-controls .btn {
+    width: 35px; /* Zarovnání tlačítek + a - */
+}
