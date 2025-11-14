@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gueser</title>
+</head>
+<body>
+    <h1>Guess the numebr</h1>
+    <p>Try to guess the number between 1 and 100!</p>
+    <input type="number" id="guessInput" placeholder="Enter your guess">
+    <button id="submitGuess">Submit Guess</button>
+    <p id="feedback"></p>
+    <script>
+        const randomNumber = Math.floor(Math.random() * 100) + 1;
+        const guessInput = document.getElementById('guessInput');
+        const submitGuess = document.getElementById('submitGuess');
+        const feedback = document.getElementById('feedback');
+
+        submitGuess.addEventListener('click', () => {
+            const userGuess = parseInt(guessInput.value);
+            if (isNaN(userGuess) || userGuess < 1 || userGuess > 100) {
+                feedback.textContent = 'Please enter a valid number between 1 and 100.';
+                return;
+            }
+            if (userGuess < randomNumber) {
+                feedback.textContent = 'Too low! Try again.';
+            } else if (userGuess > randomNumber) {
+                feedback.textContent = 'Too high! Try again.';
+            } else {
+                feedback.textContent = 'Congratulations! You guessed the number!';
+            }
+        });
+    </script>
+</body>
+</html>
