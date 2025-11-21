@@ -110,6 +110,7 @@
         // Reset the game to start a new round
         function resetGame() {
             randomNumber = Math.floor(Math.random() * 100) + 1;
+            console.log("New random number: ", randomNumber);
             attempts = 0;
             attemptsEl.textContent = attempts;
             feedback.textContent = '';
