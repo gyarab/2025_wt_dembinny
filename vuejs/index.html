@@ -46,15 +46,18 @@
                 examples.</p>
             <div class="mb-4 shadow-sm p-3 pb-0 border rounded">
 
-                <form class="row g-3 align-items-end container mb-3 justify-content-between" role="form" novalidate>
+                <form class="row g-3 align-items-start container mb-3 justify-content-between" role="form" @submit.prevent="handleSubmit">
                     <div class="col-lg-6 col-md-12">
                         <label for="name" class="form-label">Name</label>
-                        <input type="text" class="form-control" id="name" name="name" placeholder="Enter your name">
+                        <input v-model="trip.name" @keyup="validateForm" type="text" class="form-control" id="name" name="name" placeholder="Enter your name">
+                        <div v-if="errors.name" class="badge rounded-pill text-bg-danger mt-3">
+                            <span class="" v-if="errors.name">{{ errors.name }}</span>
+                        </div>
                     </div>
 
                     <div class="col-lg-4 col-md-6 col-12">
                         <label for="planet" class="form-label">Destination</label>
-                        <select class="form-select" id="planet" name="planet">
+                        <select v-model="trip.planet" class="form-select" id="planet" name="planet">
                             <option selected value="Mars" class="">Mars — Red planet</option>
                             <option value="Venus">Venus</option>
                         </select>
@@ -62,20 +65,20 @@
 
                     <div class="col-lg-2 col-md-3 col-12">
                         <label for="days" class="form-label">Days</label>
-                        <input type="number" class="form-control" id="days" name="days" min="1" placeholder="1">
+                        <input v-model.number="trip.days" type="number" class="form-control" id="days" name="days" min="1" placeholder="1">
                     </div>
 
                     <div class="col-12">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="terms" name="terms">
+                            <input v-model="trip.terms" class="form-check-input" type="checkbox" id="terms" name="terms">
                             <label class="form-check-label" for="terms">I agree to the travel terms</label>
                         </div>
                     </div>
 
                     <div class="col-12 d-flex justify-content-between align-items-center">
                         <div class="d-flex container row g-3 align-items-end container justify-content-between">
-                            <button type="submit" class="btn btn-primary col-12 col-sm-7"
-                                :disabled="false">Submit</button>
+                                <button type="submit" class="btn btn-primary col-12 col-sm-7"
+                                :disabled="!isValid">Submit</button>
                             <button type="reset" class="btn btn-outline-secondary col-sm-3">Reset</button>
                         </div>
                     </div>
@@ -85,10 +88,10 @@
             <div class="container card shadow-sm rounded py-4">
                 <h2 class="px-2">Bording Ticket</h2>
                 <p>
-                    Name: <strong>{{ name }}</strong><br>
-                    Destination: <strong>{{ planet }}</strong><br>
-                    Days: <strong>{{ days }}</strong><br>
-                    Cost: <strong>{{ days * 1000 }} credits</strong>
+                    Name: <strong>{{ trip.name }}</strong><br>
+                    Destination: <strong>{{ trip.planet }}</strong><br>
+                    Days: <strong>{{ trip.days }}</strong><br>
+                    Cost: <strong>{{ trip.days * 1000 }} credits</strong>
                 </p>
                 <p class="text-muted">
                     When you deside to not go, just edit the form and this ticket will update accordingly.
@@ -106,10 +109,34 @@
         Vue.createApp({
             data() {
                 return {
-                    name: 'Test User',
-                    planet: 'Mars',
-                    days: 1,
-                    accepted: false
+                    trip: {
+                        name: '',
+                        planet: 'Mars',
+                        days: 1,
+                        terms: false
+                    },
+                    errors: {}
+                }
+            },
+            computed: {
+                isValid() {
+                    return true;
+                    return this.trip.name.trim() !== '' &&
+                        this.trip.planet.trim() !== '' &&
+                        this.trip.days > 0 &&
+                        this.trip.terms;
+                }
+            },
+            methods: {
+                validateForm() {
+                    this.errors = {};
+                    if (this.trip.name.trim() === '') {
+                        this.errors.name = "Name is required.";
+                    }
+                },
+                handleSubmit() {
+                    console.log("Handle Submit Called");
+                    this.validateForm();
                 }
             }
         }).mount('#app')
