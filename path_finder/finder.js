@@ -1,5 +1,5 @@
 // await (await fetch("/lfc", { method: 'HEAD' })).text()
-// Turbo speed
+
 window.isScanning = true;
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz";
@@ -13,69 +13,45 @@ const indexToString = (idx, len) => {
     return res;
 };
 
-/**
- * @param {string} startPath - e.g., "aaa"
- * @param {number} concurrency - Number of parallel requests (Try 5-8)
- * @param {number} tolerance - Chunk size difference to trigger a warn
- */
-async function turboStreamScan(startPath, concurrency = 6, tolerance = 50) {
+async function smartTurboScan(startPath, concurrency = 4) {
     const n = startPath.length;
-    const startIndex = stringToIndex(startPath);
+    let currentIndex = stringToIndex(startPath);
     const maxIndex = Math.pow(alphabet.length, n);
-    const totalToScan = maxIndex - startIndex;
 
-    console.log("%c--- Initializing Turbo Stream Scan ---", "color: #00e5ff; font-weight: bold;");
+    console.log("%c--- Starting Smart Scan (Keyword Based) ---", "color: #00ff00");
 
-    // 1. Get Baseline Chunk Size
-    const baselineRes = await fetch('/non-existent-' + Date.now());
-    const reader = baselineRes.body.getReader();
-    const { value: baselineChunk } = await reader.read();
-    const baselineSize = baselineChunk ? baselineChunk.length : 0;
-    reader.cancel(); // Stop downloading the rest of the 404
-
-    console.log(`Baseline 404 first-chunk size: ${baselineSize} bytes`);
-    
-    let currentIndex = startIndex;
-    let foundCount = 0;
-    const startTime = Date.now();
+    const baseContent = "<h2>TERRA: CONQUEST</h2>";
 
     const worker = async () => {
-        while (currentIndex < maxIndex) {
-            // CHECK THE KILL SWITCH
-            if (!window.isScanning) {
-                console.log("%c[!] Stopping script...", "color: red; font-weight: bold;");
-                return; 
-            }
-
-            const i = currentIndex++;
-            const path = indexToString(i, n);
-            const controller = new AbortController();
-
+        while (currentIndex < maxIndex && window.isScanning) {
+            const path = indexToString(currentIndex++, n);
+            
             try {
-                const response = await fetch(`/${path}`, { signal: controller.signal });
-                
+                const response = await fetch(`/${path}`);
                 if (response.ok) {
                     const reader = response.body.getReader();
-                    const { value: chunk } = await reader.read();
-                    const chunkSize = chunk ? chunk.length : 0;
-                    
-                    // Kill the connection as soon as we have the first chunk 
+                    const { value } = await reader.read();
+                    const text = new TextDecoder().decode(value);
+                    reader.cancel();
 
-                    if (Math.abs(chunkSize - baselineSize) > tolerance) {
-                        if (chunkSize - baselineSize < -2000) {
-                            console.error(`[!!!] LARGE NEGATIVE DIFF DETECTED at /${path} | Chunk Size: ${chunkSize} | Diff: ${chunkSize - baselineSize}`);
-                            currentIndex--; // Re-scan this one
-                            continue;
-                        }
-                        foundCount++;
-                        console.warn(`[!] MATCH: /${path} | Chunk Size: ${chunkSize} | Diff: ${chunkSize - baselineSize} | Found: ${foundCount}`);
+                    // IGNORE common block pages
+                    if (text.includes("cf-browser-verification") || text.includes("Access denied")) {
+                        console.error(`Blocked at /${path}. Slowing down...`);
+                        await new Promise(r => setTimeout(r, 100)); // Wait 100ms if blocked
+                        continue;
+                    }
+
+                    // SEARCH for a signature that proves it's a real, different page
+                    // Adjust "Matouš Tlamka" to something unique to your 404 page
+                    if (!text.includes(baseContent)) { 
+                        console.warn(`[!] TRUE MATCH FOUND: /${path}`);
                     }
                     controller.abort();
                 }
             } catch (e) {
                 if (e.name !== 'AbortError') {
                     console.error(`Error at /${path}:`, e.message);
-                    await new Promise(r => setTimeout(r, 2000));
+                    await new Promise(r => setTimeout(r, 1000));
                 }
             }
 
@@ -89,18 +65,18 @@ async function turboStreamScan(startPath, concurrency = 6, tolerance = 50) {
                 
                 console.log(`Progress: ${((processed / totalToScan) * 100).toFixed(2)}% | Path: /${path} | Speed: ${Math.round((1000/msPerReq) * concurrency)} req/s | ETA: ${etaMin} min`);
             }
+            
+            // Slow down the concurrency to avoid triggers
+            // await new Promise(r => setTimeout(r, 250)); 
         }
     };
 
-    // Fire up the workers
     const workers = Array(concurrency).fill(null).map(() => worker());
     await Promise.all(workers);
-    
-    console.log("%c--- Scan Complete ---", "color: #00e5ff; font-weight: bold;");
 }
 function stop() {
     window.isScanning = false;
 }
 
-// Start scanning
-turboStreamScan("aews", 6);
+// Call with lower concurrency to be stealthier
+smartTurboScan("aews", 6);
