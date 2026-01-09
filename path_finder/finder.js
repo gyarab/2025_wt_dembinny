@@ -16,11 +16,20 @@ const indexToString = (idx, len) => {
 async function smartTurboScan(startPath, concurrency = 4) {
     const n = startPath.length;
     let currentIndex = stringToIndex(startPath);
+    const startIndex = currentIndex;
+    const startTime = Date.now();
     const maxIndex = Math.pow(alphabet.length, n);
+    const totalToScan = maxIndex - startIndex;
 
     console.log("%c--- Starting Smart Scan (Keyword Based) ---", "color: #00ff00");
 
-    const baseContent = "<h2>TERRA: CONQUEST</h2>";
+    const baseContent = `<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matouš Tlamka</title>
+    <meta name="description" content="Oficiální portfolio. Strategická analýza, politická geografie a vize The Golden European Path.">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>`;
 
     const worker = async () => {
         while (currentIndex < maxIndex && window.isScanning) {
@@ -32,21 +41,14 @@ async function smartTurboScan(startPath, concurrency = 4) {
                     const reader = response.body.getReader();
                     const { value } = await reader.read();
                     const text = new TextDecoder().decode(value);
-                    reader.cancel();
-
-                    // IGNORE common block pages
-                    if (text.includes("cf-browser-verification") || text.includes("Access denied")) {
-                        console.error(`Blocked at /${path}. Slowing down...`);
-                        await new Promise(r => setTimeout(r, 100)); // Wait 100ms if blocked
-                        continue;
-                    }
 
                     // SEARCH for a signature that proves it's a real, different page
                     // Adjust "Matouš Tlamka" to something unique to your 404 page
                     if (!text.includes(baseContent)) { 
-                        console.warn(`[!] TRUE MATCH FOUND: /${path}`);
+                        console.warn(`[!] TRUE MATCH FOUND: /${path}`, text);
+                        await new Promise(r => setTimeout(r, 1000));
                     }
-                    controller.abort();
+                    reader.cancel();
                 }
             } catch (e) {
                 if (e.name !== 'AbortError') {
@@ -79,4 +81,4 @@ function stop() {
 }
 
 // Call with lower concurrency to be stealthier
-smartTurboScan("aews", 6);
+smartTurboScan("ajxc", 6);
