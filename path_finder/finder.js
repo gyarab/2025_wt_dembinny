@@ -13,69 +13,72 @@ const indexToString = (index, length) => {
 };
 
 /**
- * @param {string} startPath - Where to begin (e.g. "aaa")
- * @param {number} tolerance - Bytes difference from 404 to trigger a warning
- * @param {number} updateFrequency - How often to log progress (default every 100 paths)
+ * @param {string} startPath - e.g., "aaa"
+ * @param {number} tolerance - Byte difference to trigger a warn
+ * @param {number} logInterval - Update progress every X paths
  */
-async function scanWithETA(startPath, tolerance = 150, updateFrequency = 100) {
+async function fastScanETA(startPath, tolerance = 100, logInterval = 100) {
     const n = startPath.length;
     const startIndex = stringToIndex(startPath);
     const maxIndex = Math.pow(alphabet.length, n);
-    const totalToProcess = maxIndex - startIndex;
+    const totalToScan = maxIndex - startIndex;
 
-    console.log("--- Initializing Scan ---");
-    const baselineRes = await fetch('/non-existent-' + Date.now());
-    const baselineLength = (await baselineRes.text()).length;
+    console.log("%c--- Initializing Fast Scan ---", "color: cyan; font-weight: bold;");
     
-    console.log(`Baseline 404 Size: ${baselineLength} bytes`);
-    console.log(`Target: ${totalToProcess.toLocaleString()} combinations.`);
+    // Get Baseline using HEAD request
+    const baselineRes = await fetch('/non-existent-' + Date.now(), { method: 'HEAD' });
+    const baselineSize = parseInt(baselineRes.headers.get('content-length')) || 0;
     
+    console.log(`Baseline 404 Header Size: ${baselineSize} bytes`);
+    console.log(`Remaining to scan: ${totalToScan.toLocaleString()}`);
+
     let startTime = Date.now();
     let foundCount = 0;
 
     for (let i = startIndex; i < maxIndex; i++) {
         const path = indexToString(i, n);
-        const currentCount = i - startIndex + 1;
+        const processedSoFar = i - startIndex + 1;
 
         try {
-            const response = await fetch(`/${path}`);
+            // Using HEAD is much faster as it doesn't download the HTML body
+            const response = await fetch(`/${path}`, { method: 'HEAD' });
+
             if (response.ok) {
-                const text = await response.text();
-                const diff = Math.abs(text.length - baselineLength);
+                const size = parseInt(response.headers.get('content-length')) || 0;
+                const diff = Math.abs(size - baselineSize);
 
                 if (diff > tolerance) {
                     foundCount++;
-                    // This is your primary filterable output
-                    console.warn(`[!] MATCH: /${path} | Diff: ${diff} bytes | Total Found: ${foundCount}`);
+                    console.warn(`[!] MATCH: /${path} | Header Size: ${size} | Diff: ${diff} | Total: ${foundCount}`);
                 }
             }
         } catch (e) {
-            // Error typically means rate limiting or network drop
-            console.error(`Error at /${path}. Pausing 5s...`);
-            await new Promise(r => setTimeout(r, 5000));
-            i--; continue; 
+            console.error(`Connection error at /${path}. Pausing 3s...`);
+            await new Promise(r => setTimeout(r, 3000));
+            i--; continue;
         }
 
-        // Periodic Progress & ETA Update
-        if (currentCount % updateFrequency === 0 || i === maxIndex - 1) {
+        // --- ETA and Progress Logic ---
+        if (processedSoFar % logInterval === 0 || i === maxIndex - 1) {
             const elapsedMs = Date.now() - startTime;
-            const msPerReq = elapsedMs / currentCount;
+            const msPerReq = elapsedMs / processedSoFar;
             const remainingReq = maxIndex - i;
             const etaMinutes = (remainingReq * msPerReq) / 1000 / 60;
 
             console.log(
-                `Progress: ${((currentCount / totalToProcess) * 100).toFixed(2)}% | ` +
-                `Path: /${path} | ` +
-                `Speed: ${Math.round(1000/msPerReq)} req/s | ` +
-                `ETA: ${etaMinutes.toFixed(1)} min remaining`
+                `Progress: ${((processedSoFar / totalToScan) * 100).toFixed(2)}% | ` +
+                `Current: /${path} | ` +
+                `Speed: ${Math.round(1000 / msPerReq)} req/s | ` +
+                `ETA: ${etaMinutes.toFixed(1)} min`
             );
         }
 
-        // Small safety delay to prevent browser locking
-        // await new Promise(r => setTimeout(r, 0));
+        // Short delay to keep the browser responsive
+        await new Promise(r => setTimeout(r, 40));
     }
-    console.log("--- Scan Complete ---");
+
+    console.log("%c--- Scan Complete ---", "color: cyan; font-weight: bold;");
 }
 
-// Start the scan
-scanWithETA("algh");
+// Start scanning from 'aaa'
+fastScanETA("aaa");
