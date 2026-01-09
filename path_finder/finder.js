@@ -1,86 +1,106 @@
 // await (await fetch("/lfc", { method: 'HEAD' })).text()
 // Turbo speed
+window.isScanning = true;
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz";
-const stringToIndex = (str) => str.split('').reduce((acc, char) => (acc * alphabet.length) + alphabet.indexOf(char), 0);
-const indexToString = (index, length) => {
+const stringToIndex = (s) => s.split('').reduce((a, c) => (a * alphabet.length) + alphabet.indexOf(c), 0);
+const indexToString = (idx, len) => {
     let res = "";
-    for (let i = 0; i < length; i++) {
-        res = alphabet[index % alphabet.length] + res;
-        index = Math.floor(index / alphabet.length);
+    for (let i = 0; i < len; i++) {
+        res = alphabet[idx % alphabet.length] + res;
+        idx = Math.floor(idx / alphabet.length);
     }
     return res;
 };
 
 /**
  * @param {string} startPath - e.g., "aaa"
- * @param {number} concurrency - How many requests to run at once (Suggested: 5-10)
- * @param {number} tolerance - Byte difference to trigger a warn
+ * @param {number} concurrency - Number of parallel requests (Try 5-8)
+ * @param {number} tolerance - Chunk size difference to trigger a warn
  */
-async function turboScan(startPath, concurrency = 6, tolerance = 150) {
+async function turboStreamScan(startPath, concurrency = 6, tolerance = 50) {
     const n = startPath.length;
     const startIndex = stringToIndex(startPath);
     const maxIndex = Math.pow(alphabet.length, n);
     const totalToScan = maxIndex - startIndex;
 
-    console.log("%c--- Initializing Turbo Scan ---", "color: orange; font-weight: bold;");
-    
-    // Baseline check
-    const baselineRes = await fetch('/404-' + Date.now(), { method: 'HEAD' });
-    const baselineSize = parseInt(baselineRes.headers.get('content-length')) || 0;
+    console.log("%c--- Initializing Turbo Stream Scan ---", "color: #00e5ff; font-weight: bold;");
+
+    // 1. Get Baseline Chunk Size
+    const baselineRes = await fetch('/non-existent-' + Date.now());
+    const reader = baselineRes.body.getReader();
+    const { value: baselineChunk } = await reader.read();
+    const baselineSize = baselineChunk ? baselineChunk.length : 0;
+    reader.cancel(); // Stop downloading the rest of the 404
+
+    console.log(`Baseline 404 first-chunk size: ${baselineSize} bytes`);
     
     let currentIndex = startIndex;
     let foundCount = 0;
     const startTime = Date.now();
 
-    // The worker function that picks the next available index
     const worker = async () => {
         while (currentIndex < maxIndex) {
-            const i = currentIndex++;
-            const path = indexToString(i, n);
-
-            try {
-                // We use HEAD for speed, change to GET if the server returns 0 for HEAD
-                const response = await fetch(`/${path}`, { method: 'HEAD' });
-                
-                if (response.ok) {
-                    const size = parseInt(response.headers.get('content-length')) || 0;
-                    if (Math.abs(size - baselineSize) > tolerance) {
-                        foundCount++;
-                        console.warn(`[!] MATCH: /${path} | Size: ${size} | Total: ${foundCount}`);
-                    }
-                }
-            } catch (e) {
-                // If we hit a rate limit, the worker will stop for 5 seconds
-                console.error(`Rate limit or error at /${path}. Worker pausing...`);
-                await new Promise(r => setTimeout(r, 5000));
+            // CHECK THE KILL SWITCH
+            if (!window.isScanning) {
+                console.log("%c[!] Stopping script...", "color: red; font-weight: bold;");
+                return; 
             }
 
-            // Report progress periodically
+            const i = currentIndex++;
+            const path = indexToString(i, n);
+            const controller = new AbortController();
+
+            try {
+                const response = await fetch(`/${path}`, { signal: controller.signal });
+                
+                if (response.ok) {
+                    const reader = response.body.getReader();
+                    const { value: chunk } = await reader.read();
+                    const chunkSize = chunk ? chunk.length : 0;
+                    
+                    // Kill the connection as soon as we have the first chunk 
+
+                    if (Math.abs(chunkSize - baselineSize) > tolerance) {
+                        if (chunkSize - baselineSize < -2000) {
+                            console.error(`[!!!] LARGE NEGATIVE DIFF DETECTED at /${path} | Chunk Size: ${chunkSize} | Diff: ${chunkSize - baselineSize}`);
+                            currentIndex--; // Re-scan this one
+                            continue;
+                        }
+                        foundCount++;
+                        console.warn(`[!] MATCH: /${path} | Chunk Size: ${chunkSize} | Diff: ${chunkSize - baselineSize} | Found: ${foundCount}`);
+                    }
+                    controller.abort();
+                }
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    console.error(`Error at /${path}:`, e.message);
+                    await new Promise(r => setTimeout(r, 2000));
+                }
+            }
+
+            // ETA and Progress
             const processed = currentIndex - startIndex;
-            if (processed % 100 === 0) {
+            if (processed % 100 === 0 || currentIndex === maxIndex) {
                 const elapsed = Date.now() - startTime;
                 const msPerReq = elapsed / processed;
                 const remaining = maxIndex - currentIndex;
                 const etaMin = ((remaining * msPerReq) / concurrency / 1000 / 60).toFixed(1);
                 
-                console.log(`Progress: ${((processed / totalToScan) * 100).toFixed(2)}% | Last: /${path} | Speed: ${Math.round((1000/msPerReq) * concurrency)} req/s | ETA: ${etaMin} min`);
+                console.log(`Progress: ${((processed / totalToScan) * 100).toFixed(2)}% | Path: /${path} | Speed: ${Math.round((1000/msPerReq) * concurrency)} req/s | ETA: ${etaMin} min`);
             }
         }
     };
 
-    // Launch parallel workers
+    // Fire up the workers
     const workers = Array(concurrency).fill(null).map(() => worker());
     await Promise.all(workers);
     
-    console.log("%c--- Turbo Scan Complete ---", "color: orange; font-weight: bold;");
+    console.log("%c--- Scan Complete ---", "color: #00e5ff; font-weight: bold;");
+}
+function stop() {
+    window.isScanning = false;
 }
 
-// Start with 6 parallel connections
-turboScan("aaa", 6);
-
-`Progress: 0.57% | Last: /ado | Speed: 570 req/s | ETA: 0.5 min
-VM5967:64 Progress: 1.14% | Last: /ahn | Speed: 601 req/s | ETA: 0.5 min
-VM5967:64 Progress: 1.71% | Last: /ali | Speed: 614 req/s | ETA: 0.5 min
-VM5967:64 Progress: 2.28% | Last: /apf | Speed: 582 req/s | ETA: 0.5 min
-VM5967:64 Progress: 2.84% | Last: /asy | Speed: 589 req/s | ETA: 0.5 min`
+// Start scanning
+turboStreamScan("aews", 6);
