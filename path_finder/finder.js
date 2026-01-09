@@ -1,7 +1,7 @@
 // await (await fetch("/lfc", { method: 'HEAD' })).text()
+// Turbo speed
 
 const alphabet = "abcdefghijklmnopqrstuvwxyz";
-
 const stringToIndex = (str) => str.split('').reduce((acc, char) => (acc * alphabet.length) + alphabet.indexOf(char), 0);
 const indexToString = (index, length) => {
     let res = "";
@@ -14,71 +14,73 @@ const indexToString = (index, length) => {
 
 /**
  * @param {string} startPath - e.g., "aaa"
+ * @param {number} concurrency - How many requests to run at once (Suggested: 5-10)
  * @param {number} tolerance - Byte difference to trigger a warn
- * @param {number} logInterval - Update progress every X paths
  */
-async function fastScanETA(startPath, tolerance = 100, logInterval = 100) {
+async function turboScan(startPath, concurrency = 6, tolerance = 150) {
     const n = startPath.length;
     const startIndex = stringToIndex(startPath);
     const maxIndex = Math.pow(alphabet.length, n);
     const totalToScan = maxIndex - startIndex;
 
-    console.log("%c--- Initializing Fast Scan ---", "color: cyan; font-weight: bold;");
+    console.log("%c--- Initializing Turbo Scan ---", "color: orange; font-weight: bold;");
     
-    // Get Baseline using HEAD request
-    const baselineRes = await fetch('/non-existent-' + Date.now(), { method: 'HEAD' });
+    // Baseline check
+    const baselineRes = await fetch('/404-' + Date.now(), { method: 'HEAD' });
     const baselineSize = parseInt(baselineRes.headers.get('content-length')) || 0;
     
-    console.log(`Baseline 404 Header Size: ${baselineSize} bytes`);
-    console.log(`Remaining to scan: ${totalToScan.toLocaleString()}`);
-
-    let startTime = Date.now();
+    let currentIndex = startIndex;
     let foundCount = 0;
+    const startTime = Date.now();
 
-    for (let i = startIndex; i < maxIndex; i++) {
-        const path = indexToString(i, n);
-        const processedSoFar = i - startIndex + 1;
+    // The worker function that picks the next available index
+    const worker = async () => {
+        while (currentIndex < maxIndex) {
+            const i = currentIndex++;
+            const path = indexToString(i, n);
 
-        try {
-            // Using HEAD is much faster as it doesn't download the HTML body
-            const response = await fetch(`/${path}`, { method: 'HEAD' });
-
-            if (response.ok) {
-                const size = parseInt(response.headers.get('content-length')) || 0;
-                const diff = Math.abs(size - baselineSize);
-
-                if (diff > tolerance) {
-                    foundCount++;
-                    console.warn(`[!] MATCH: /${path} | Header Size: ${size} | Diff: ${diff} | Total: ${foundCount}`);
+            try {
+                // We use HEAD for speed, change to GET if the server returns 0 for HEAD
+                const response = await fetch(`/${path}`, { method: 'HEAD' });
+                
+                if (response.ok) {
+                    const size = parseInt(response.headers.get('content-length')) || 0;
+                    if (Math.abs(size - baselineSize) > tolerance) {
+                        foundCount++;
+                        console.warn(`[!] MATCH: /${path} | Size: ${size} | Total: ${foundCount}`);
+                    }
                 }
+            } catch (e) {
+                // If we hit a rate limit, the worker will stop for 5 seconds
+                console.error(`Rate limit or error at /${path}. Worker pausing...`);
+                await new Promise(r => setTimeout(r, 5000));
             }
-        } catch (e) {
-            console.error(`Connection error at /${path}. Pausing 3s...`);
-            await new Promise(r => setTimeout(r, 3000));
-            i--; continue;
+
+            // Report progress periodically
+            const processed = currentIndex - startIndex;
+            if (processed % 100 === 0) {
+                const elapsed = Date.now() - startTime;
+                const msPerReq = elapsed / processed;
+                const remaining = maxIndex - currentIndex;
+                const etaMin = ((remaining * msPerReq) / concurrency / 1000 / 60).toFixed(1);
+                
+                console.log(`Progress: ${((processed / totalToScan) * 100).toFixed(2)}% | Last: /${path} | Speed: ${Math.round((1000/msPerReq) * concurrency)} req/s | ETA: ${etaMin} min`);
+            }
         }
+    };
 
-        // --- ETA and Progress Logic ---
-        if (processedSoFar % logInterval === 0 || i === maxIndex - 1) {
-            const elapsedMs = Date.now() - startTime;
-            const msPerReq = elapsedMs / processedSoFar;
-            const remainingReq = maxIndex - i;
-            const etaMinutes = (remainingReq * msPerReq) / 1000 / 60;
-
-            console.log(
-                `Progress: ${((processedSoFar / totalToScan) * 100).toFixed(2)}% | ` +
-                `Current: /${path} | ` +
-                `Speed: ${Math.round(1000 / msPerReq)} req/s | ` +
-                `ETA: ${etaMinutes.toFixed(1)} min`
-            );
-        }
-
-        // Short delay to keep the browser responsive
-        await new Promise(r => setTimeout(r, 40));
-    }
-
-    console.log("%c--- Scan Complete ---", "color: cyan; font-weight: bold;");
+    // Launch parallel workers
+    const workers = Array(concurrency).fill(null).map(() => worker());
+    await Promise.all(workers);
+    
+    console.log("%c--- Turbo Scan Complete ---", "color: orange; font-weight: bold;");
 }
 
-// Start scanning from 'aaa'
-fastScanETA("aaa");
+// Start with 6 parallel connections
+turboScan("aaa", 6);
+
+`Progress: 0.57% | Last: /ado | Speed: 570 req/s | ETA: 0.5 min
+VM5967:64 Progress: 1.14% | Last: /ahn | Speed: 601 req/s | ETA: 0.5 min
+VM5967:64 Progress: 1.71% | Last: /ali | Speed: 614 req/s | ETA: 0.5 min
+VM5967:64 Progress: 2.28% | Last: /apf | Speed: 582 req/s | ETA: 0.5 min
+VM5967:64 Progress: 2.84% | Last: /asy | Speed: 589 req/s | ETA: 0.5 min`
