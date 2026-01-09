@@ -1,8 +1,18 @@
 const { Worker } = require('worker_threads');
-const os = require('os');
+const fs = require('fs');
+const path = require('path');
 
-const cpuCount = os.cpus().length;
+const cpuCount = 8;
 const alphabet = "abcdefghijklmnopqrstuvwxyz";
+
+// create/open found log in project root
+const foundLogPath = path.join(__dirname, 'found.txt');
+const foundStream = fs.createWriteStream(foundLogPath, { flags: 'a' });
+
+// ensure stream closed on exit
+process.on('exit', () => {
+	foundStream.end();
+});
 
 function startFuzzer() {
     const totalPermutations = Math.pow(alphabet.length, 4); // for aaaa-zzzz
@@ -12,14 +22,14 @@ function startFuzzer() {
         const start = i * chunkSize;
         const end = (i === cpuCount - 1) ? totalPermutations : (i + 1) * chunkSize;
 
-        const worker = new Worker('./worker.js', {
+        const worker = new Worker('./path_finder/worker.js', {
             workerData: { start, end, alphabet, target: 'http://matous-tlamka.eu/' }
         });
 
         worker.on('message', (msg) => {
             if (msg.type === 'match') {
                 console.log(`[FOUND] ${msg.url} - Status: ${msg.status}`);
-                // Append to found.txt here
+                foundStream.write(`${new Date().toISOString()} ${msg.url} - Status: ${msg.status}\n`);
             }
             if (msg.type === 'telemetry') {
                 // Update your global req/s counter

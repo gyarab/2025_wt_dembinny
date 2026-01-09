@@ -1,46 +1,47 @@
-const { workerData, parentPort } = require('worker_threads');
+const { parentPort, workerData } = require('worker_threads');
 const { Pool } = require('undici');
 
-const client = new Pool(workerData.target, { connections: 100 });
+const { startIdx, endIdx, alphabet, targetOrigin, baselineSize, n } = workerData;
 
-async function run() {
-    for (let i = workerData.start; i < workerData.end; i++) {
-        const word = generateWord(i, workerData.alphabet);
-        
-        try {
-            const { statusCode, headers } = await client.request({
-                path: `/${word}`,
-                method: 'GET',
-            });
+const client = new Pool(targetOrigin, { 
+    connections: 30, 
+    pipelining: 10 
+});
 
-            // Smart Filter
-            if (statusCode !== 404) {
-                parentPort.postMessage({ 
-                    type: 'match', 
-                    url: word, 
-                    status: statusCode,
-                    length: headers['content-length'] 
-                });
-            }
-
-            // Periodic Telemetry
-            if (i % 100 === 0) {
-                parentPort.postMessage({ type: 'telemetry', count: 100 });
-            }
-        } catch (err) {
-            // Handle connection drops or timeouts
-        }
+function indexToString(idx, len) {
+    let res = "";
+    for (let i = 0; i < len; i++) {
+        res = alphabet[idx % alphabet.length] + res;
+        idx = Math.floor(idx / alphabet.length);
     }
+    return res;
 }
 
-function generateWord(index, alphabet) {
-    let word = "";
-    let n = index;
-    for (let i = 0; i < 4; i++) {
-        word = alphabet[n % alphabet.length] + word;
-        n = Math.floor(n / alphabet.length);
+async function run() {
+    for (let i = startIdx; i < endIdx; i++) {
+        const path = indexToString(i, n);
+        
+        try {
+            const { statusCode, body } = await client.request({
+                path: '/' + path,
+                method: 'GET',
+                headers: { 'accept-encoding': 'br, gzip, deflate' }
+            });
+
+            // Fast raw byte count (no decompression)
+            let rawSize = body.size;
+
+            // Discovery: Match if status isn't 404 OR size is different
+            if (statusCode === 200 && Math.abs(rawSize - baselineSize) > 100) {
+                parentPort.postMessage({ type: 'match', path, status: statusCode, size: rawSize });
+            }
+
+        } catch (e) {
+            // Socket errors are ignored
+        }
+
+        if (i % 250 === 249) parentPort.postMessage({ type: 'progress', count: 250, path: path });
     }
-    return word;
 }
 
 run();
