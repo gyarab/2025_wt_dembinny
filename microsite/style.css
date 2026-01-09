@@ -38,6 +38,11 @@ section {
 }
 
 /* Tlačítka v košíku */
-.cart-controls .btn {
+.cart-controls .btn:not(.cart-remove-btn) {
     width: 35px; /* Zarovnání tlačítek + a - */
+}
+
+/* Tlačítko "Odstranit" může být flexibilní, aby se vešel text na větších obrazovkách */
+.cart-controls .cart-remove-btn {
+    white-space: nowrap;
 }

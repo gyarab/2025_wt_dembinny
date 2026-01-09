@@ -65,8 +65,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button class="btn btn-sm btn-outline-secondary" data-action="decrease" data-product-name="${name}">-</button>
                     <span class="mx-2">${item.quantity}x</span>
                     <button class="btn btn-sm btn-outline-secondary" data-action="increase" data-product-name="${name}">+</button>
-                    <button class="btn btn-sm btn-outline-danger ms-3" data-action="remove" data-product-name="${name}">
-                        <i class="bi bi-trash-fill"></i> Odstranit
+                    <button class="btn btn-sm btn-outline-danger ms-3 cart-remove-btn d-flex align-items-center" data-action="remove" data-product-name="${name}">
+                        <i class="bi bi-trash-fill"></i>
+                        <span class="remove-text ms-2 d-sm-none d-md-inline">Odstranit</span>
                     </button>
                 `;
 
