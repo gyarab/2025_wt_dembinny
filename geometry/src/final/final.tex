@@ -3,6 +3,8 @@
 \usepackage[utf8]{inputenc}
 \usepackage[czech]{babel}
 \usepackage{amsmath, amssymb}
+\usepackage{yhmath}
+\usepackage{tikz}
 \usepackage{tkz-euclide}
 \usepackage{enumitem} % Pro lepší formátování seznamů
 
@@ -13,7 +15,7 @@
 Úlohou je sestrojit střed $I$ kružnice vepsané trojúhelníku $ABC$, je-li dána kružnice opsaná $k$ (bez vyznačeného středu) a tři body $A, B, C$ na ní. K dispozici máme pouze pravítko s ryskou (umožňuje rýsovat přímky a kolmice).
 
 \subsection*{1. Nalezení středu opsané kružnice ($O$)}
-Abychom mohli pracovat s oblouky, potřebujeme nejprve najít střed kružnice $k$. Využijeme vlastnosti Thaletovy věty a pravoúhelníku:
+Abychom mohli pracovat s oblouky, potřebujeme nejprve najít střed kružnice~$k$. Využijeme vlastnosti Thaletovy věty a pravoúhelníku:
 \begin{itemize}
     \item Vztyčíme-li v bodě $B$ kolmici na stranu $AB$, protne tato kolmice kružnici v bodě $K$. Podle Thaletovy věty je úsečka $AK$ průměrem kružnice.
     \item Analogicky vztyčíme kolmici v bodě $A$ na stranu $AB$, která protne kružnici v bodě $L$. Úsečka $BL$ je rovněž průměrem.
@@ -23,7 +25,7 @@ Abychom mohli pracovat s oblouky, potřebujeme nejprve najít střed kružnice $
 \subsection*{2. Sestrojení os úhlů}
 Střed vepsané kružnice $I$ leží v průsečíku os vnitřních úhlů trojúhelníku.
 \begin{itemize}
-    \item Osa úhlu $\alpha$ (při vrcholu $A$) prochází středem $S_a$ oblouku $BC$ (toho oblouku, který neobsahuje bod $A$).
+    \item Osa úhlu $\alpha$ (při vrcholu $A$) prochází středem $S_a$ oblouku $BC$ (toho oblouku, který neobsahuje bod $A$). (důkaz věty na konci)
     \item Bod $S_a$ leží na ose úsečky $BC$. Osa tětivy prochází středem kružnice $O$ a je kolmá k tětivě.
     \item Sestrojíme tedy kolmici z bodu $O$ na stranu $BC$. Její průsečík s kružnicí (v polorovině neobsahující $A$) je bod $S_a$. Polopřímka $AS_a$ je hledanou osou úhlu.
     \item Analogicky sestrojíme osu úhlu $\beta$ pomocí středu $S_b$ oblouku $AC$.
@@ -46,42 +48,143 @@ Střed vepsané kružnice $I$ leží v průsečíku os vnitřních úhlů trojú
     \item $I$; $I = \text{polopřímka } AS_a \cap \text{polopřímka } BS_b$.
 \end{enumerate}
 
+\vspace{2cm}
+
 \begin{center}
-% Jednodušší verze obrázku bez tkz-euclide příkazů (bez komplikovaných pgfkeys)
+% ZDE VLOŽÍME TVŮJ KÓD OBRÁZKU
 \begin{tikzpicture}[scale=1.5]
-  % základní body a kružnice (bez tkz-euclide)
-  \coordinate (O) at (0,0);
-  \coordinate (A) at (160:3);
-  \coordinate (B) at (210:3);
-  \coordinate (C) at (300:3);
+  % --- ZADÁNÍ ---
+  \tkzDefPoint(0,0){O}
+  \tkzDefPoint(3,0){R} 
+  \tkzDefPoint(160:3){A}
+  \tkzDefPoint(210:3){B}
+  \tkzDefPoint(300:3){C}
+  
+  \tkzDrawCircle(O,R)
+  \tkzDrawPolygon[thick](A,B,C)
+  \tkzLabelPoints[above left](A)
+  \tkzLabelPoints[below left](B)
+  \tkzLabelPoints[below right](C)
 
-  % opsaná kružnice
-  \draw[black] (O) circle (3);
+  % --- KROK 1: HLEDÁNÍ STŘEDU O (Obdélníková metoda) ---
+  \tkzDefLine[orthogonal=through B](A,B) \tkzGetPoint{dir1}
+  \tkzInterLC(B,dir1)(O,A) \tkzGetPoints{}{K}
+  \tkzDrawLine[dashed, color=gray](B,K)
+  \tkzDrawSegment[dashed, color=gray](A,K) 
+  \tkzLabelPoints(K)
+  
+  \tkzDefLine[orthogonal=through A](A,B) \tkzGetPoint{dir2}
+  \tkzInterLC(A,dir2)(O,A) \tkzGetPoints{L}{}
+  \tkzDrawLine[dashed, color=gray](A,L)
+  \tkzDrawSegment[dashed, color=gray](B,L) 
+  \tkzLabelPoints(L)
+  
+  \tkzDrawPoint[color=red](O)
+  \tkzLabelPoint[right, color=red](O){$O$}
 
-  % trojúhelník ABC
-  \draw[thick] (A) -- (B) -- (C) -- cycle;
+  % --- KROK 2: OSY ÚHLŮ ---
+  % A) Osa úhlu alfa
+  \tkzDefLine[orthogonal=through O](B,C) \tkzGetPoint{dirBC}
+  \tkzInterLC(O,dirBC)(O,A) \tkzGetPoints{S_a}{S_a_far} 
+  \tkzDrawLine[dotted, color=blue](O,S_a)
+  \tkzDrawPoint[color=blue](S_a)
+  \tkzDrawLine[add=0 and 0.2, color=blue, thick](A,S_a)
 
-  % popisky vrcholů
-  \node[above left] at (A) {$A$};
-  \node[below left] at (B) {$B$};
-  \node[below right] at (C) {$C$};
+  % B) Osa úhlu beta
+  \tkzDefLine[orthogonal=through O](A,C) \tkzGetPoint{dirAC}
+  \tkzInterLC(O,dirAC)(O,A) \tkzGetPoints{S_b_far}{S_b}
+  \tkzDrawLine[dotted, color=green!60!black](O,S_b)
+  \tkzDrawPoint[color=green!60!black](S_b)
+  \tkzDrawLine[add=0 and 0.2, color=green!60!black, thick](B,S_b)
 
-  % označení středu O
-  \fill[red] (O) circle (1.2pt);
-  \node[right, red] at (O) {$O$};
+  % --- VÝSLEDEK ---
+  \tkzInterLL(A,S_a)(B,S_b) \tkzGetPoint{I}
+  \tkzDrawPoint[color=red, size=4](I)
+  \tkzLabelPoint[left, color=red](I){$I$}
+  
+%   % Kontrolní vepsaná kružnice
+%   \tkzDefPointBy[projection=onto A--B](I) \tkzGetPoint{T}
+%   \tkzDrawCircle[color=red](I,T)
+  % --- KONTROLA (Vepsaná kružnice) ---
+  % Místo 'projection' použijeme průsečík kolmice
+  
+  % 1. Definujeme pomocný bod 'temp' na kolmici vedené z I k AB
+  \tkzDefLine[orthogonal=through I](A,B) \tkzGetPoint{temp}
+  
+  % 2. Najdeme průsečík této kolmice se stranou AB -> to je bod dotyku T
+  \tkzInterLL(I,temp)(A,B) \tkzGetPoint{T}
+  
+  % 3. Vykreslíme kružnici se středem I procházející bodem T
+  \tkzDrawCircle[color=red](I,T)
+\end{tikzpicture}
+\end{center}
 
-  % náčrt pomocných přímek (ilustrační, neinteraktivní konstrukce)
-  \draw[dashed,gray] ($(B)!0.7!(O)$) -- ($(B)!1.6!(O)$);
-  \draw[dashed,gray] ($(A)!0.7!(O)$) -- ($(A)!1.6!(O)$);
+\paragraph{Důkaz tvrzení:}
+Osa úhlu $\alpha$ (při vrcholu $A$) prochází středem $S_a$ oblouku $BC$. Důkaz vychází z věty o obvodových úhlech.
 
-  % orientační osy úhlů (naznačeno směrem k O)
-  \draw[blue, thick] (A) -- ($(A)!1.0!(O)$);
-  \draw[green!60!black, thick] (B) -- ($(B)!1.0!(O)$);
+\begin{enumerate}
+    \item \textbf{Rozdělení úhlu:}
+    Protože polopřímka $A S_a$ je osou úhlu $\alpha$, dělí tento úhel na dvě poloviny. Platí tedy:
+    \[
+        \angle BAS_a = \angle CAS_a = \frac{\alpha}{2}
+    \]
 
-  % příkladný střed I (jen pro ilustraci)
-  \coordinate (I) at (0.2,0.25);
-  \fill[red] (I) circle (1.5pt);
-  \node[left, red] at (I) {$I$};
+    \item \textbf{Vztah úhlů a oblouků:}
+    Věta o obvodových úhlech říká, že velikost obvodového úhlu je přímo úměrná délce oblouku, nad kterým tento úhel leží.
+    \begin{itemize}
+        \item Úhel $\angle BAS_a$ přísluší oblouku $B S_a$.
+        \item Úhel $\angle CAS_a$ přísluší oblouku $C S_a$.
+    \end{itemize}
+
+    \item \textbf{Porovnání:}
+    Protože se rovnají úhly ($\frac{\alpha}{2} = \frac{\alpha}{2}$), musí se rovnat i délky oblouků, které jim odpovídají:
+    \[
+        \left| \overset{\frown}{BS_a} \right| = \left| \overset{\frown}{CS_a} \right|
+    \]
+
+    \item \textbf{Závěr:}
+    Pokud jsou oblouky $B S_a$ a $C S_a$ stejně dlouhé a navazují na sebe v bodě $S_a$, pak bod $S_a$ nutně leží ve středu oblouku $BC$.
+\end{enumerate}
+
+\vspace{2cm}
+
+\begin{center}
+    \begin{tikzpicture}[scale=1.8]
+        \tkzDefPoint(0,0){O}
+  \tkzDefPoint(2,0){X}
+  \tkzDrawCircle(O,X)
+  
+  % Body
+  \tkzDefPoint(110:2){A}
+  \tkzDefPoint(200:2){B}
+  \tkzDefPoint(340:2){C}
+  
+  % Osa úhlu
+  \tkzDefLine[bisector](B,A,C) \tkzGetPoint{bisector_dir}
+  \tkzInterLC(A,bisector_dir)(O,X) \tkzGetPoints{junk}{Sa}
+  
+  % Vykreslení
+  \tkzDrawPolygon(A,B,C)
+  \tkzDrawSegment[color=red, thick](A,Sa)
+  \tkzDrawSegments[dashed](B,Sa C,Sa)
+  
+  % Značky úhlů
+  \tkzMarkAngle[size=0.6, mark=|](B,A,Sa)
+  \tkzMarkAngle[size=0.6, mark=|](Sa,A,C)
+  
+  % Popisky
+  \tkzLabelPoints[above left](A)
+  \tkzLabelPoints[below left](B)
+  \tkzLabelPoints[right](C)
+  \tkzLabelPoint[below](Sa){$S_a$}
+  
+  % Textové vysvětlení do obrázku
+  \tkzLabelAngle[pos=1.1](B,A,Sa){$\alpha/2$}
+  \tkzLabelAngle[pos=1.1](Sa,A,C){$\alpha/2$}
+  
+  % Zvýraznění oblouků (jen schematicky barvou tětiv)
+  \tkzDrawSegment[color=blue, ultra thick](B,Sa)
+  \tkzDrawSegment[color=blue, ultra thick](C,Sa)
 \end{tikzpicture}
 \end{center}
 
