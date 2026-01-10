@@ -1,0 +1,88 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{tkz-euclide}
+\usepackage{enumitem} % Pro lepší formátování seznamů
+
+\begin{document}
+
+\section*{Geometrický rozbor}
+
+Úlohou je sestrojit střed $I$ kružnice vepsané trojúhelníku $ABC$, je-li dána kružnice opsaná $k$ (bez vyznačeného středu) a tři body $A, B, C$ na ní. K dispozici máme pouze pravítko s ryskou (umožňuje rýsovat přímky a kolmice).
+
+\subsection*{1. Nalezení středu opsané kružnice ($O$)}
+Abychom mohli pracovat s oblouky, potřebujeme nejprve najít střed kružnice $k$. Využijeme vlastnosti Thaletovy věty a pravoúhelníku:
+\begin{itemize}
+    \item Vztyčíme-li v bodě $B$ kolmici na stranu $AB$, protne tato kolmice kružnici v bodě $K$. Podle Thaletovy věty je úsečka $AK$ průměrem kružnice.
+    \item Analogicky vztyčíme kolmici v bodě $A$ na stranu $AB$, která protne kružnici v bodě $L$. Úsečka $BL$ je rovněž průměrem.
+    \item Body $A, B, K, L$ tvoří vrcholy obdélníku vepsaného do kružnice. Průsečík úhlopříček $AK$ a $BL$ je hledaný střed $O$.
+\end{itemize}
+
+\subsection*{2. Sestrojení os úhlů}
+Střed vepsané kružnice $I$ leží v průsečíku os vnitřních úhlů trojúhelníku.
+\begin{itemize}
+    \item Osa úhlu $\alpha$ (při vrcholu $A$) prochází středem $S_a$ oblouku $BC$ (toho oblouku, který neobsahuje bod $A$).
+    \item Bod $S_a$ leží na ose úsečky $BC$. Osa tětivy prochází středem kružnice $O$ a je kolmá k tětivě.
+    \item Sestrojíme tedy kolmici z bodu $O$ na stranu $BC$. Její průsečík s kružnicí (v polorovině neobsahující $A$) je bod $S_a$. Polopřímka $AS_a$ je hledanou osou úhlu.
+    \item Analogicky sestrojíme osu úhlu $\beta$ pomocí středu $S_b$ oblouku $AC$.
+\end{itemize}
+
+\section*{Konstrukční postup}
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+    \item Sestrojíme přímku $p \perp AB$ procházející bodem $B$.
+    \item $K$; $K = p \cap k$ ($K \neq B$).
+    \item Sestrojíme přímku $q \perp AB$ procházející bodem $A$.
+    \item $L$; $L = q \cap k$ ($L \neq A$).
+    \item $O$; $O = AK \cap BL$ (Střed opsané kružnice).
+    \item Sestrojíme přímku $r$ procházející bodem $O$ tak, že $r \perp BC$.
+    \item $S_a$; $S_a = r \cap k$, přičemž $S_a$ a $A$ leží v opačných polorovinách určených přímkou $BC$.
+    \item Sestrojíme polopřímku $AS_a$ (osa úhlu $\alpha$).
+    \item Sestrojíme přímku $s$ procházející bodem $O$ tak, že $s \perp AC$.
+    \item $S_b$; $S_b = s \cap k$, přičemž $S_b$ a $B$ leží v opačných polorovinách určených přímkou $AC$.
+    \item Sestrojíme polopřímku $BS_b$ (osa úhlu $\beta$).
+    \item $I$; $I = \text{polopřímka } AS_a \cap \text{polopřímka } BS_b$.
+\end{enumerate}
+
+\begin{center}
+% Jednodušší verze obrázku bez tkz-euclide příkazů (bez komplikovaných pgfkeys)
+\begin{tikzpicture}[scale=1.5]
+  % základní body a kružnice (bez tkz-euclide)
+  \coordinate (O) at (0,0);
+  \coordinate (A) at (160:3);
+  \coordinate (B) at (210:3);
+  \coordinate (C) at (300:3);
+
+  % opsaná kružnice
+  \draw[black] (O) circle (3);
+
+  % trojúhelník ABC
+  \draw[thick] (A) -- (B) -- (C) -- cycle;
+
+  % popisky vrcholů
+  \node[above left] at (A) {$A$};
+  \node[below left] at (B) {$B$};
+  \node[below right] at (C) {$C$};
+
+  % označení středu O
+  \fill[red] (O) circle (1.2pt);
+  \node[right, red] at (O) {$O$};
+
+  % náčrt pomocných přímek (ilustrační, neinteraktivní konstrukce)
+  \draw[dashed,gray] ($(B)!0.7!(O)$) -- ($(B)!1.6!(O)$);
+  \draw[dashed,gray] ($(A)!0.7!(O)$) -- ($(A)!1.6!(O)$);
+
+  % orientační osy úhlů (naznačeno směrem k O)
+  \draw[blue, thick] (A) -- ($(A)!1.0!(O)$);
+  \draw[green!60!black, thick] (B) -- ($(B)!1.0!(O)$);
+
+  % příkladný střed I (jen pro ilustraci)
+  \coordinate (I) at (0.2,0.25);
+  \fill[red] (I) circle (1.5pt);
+  \node[left, red] at (I) {$I$};
+\end{tikzpicture}
+\end{center}
+
+\end{document}
