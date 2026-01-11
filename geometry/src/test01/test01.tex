@@ -36,9 +36,17 @@ Choose a~numbered entry point to~begin the~learning process:
   % 3. Get the center point and name it 'I'
   \tkzGetPoint{I}
 
+  \tkzDefPointBy[projection=onto A--B](I)
+
+  \tkzGetPoint{perm}
+
+  \tkzDrawPoints(I,perm)
+
+  \tkzAutoLabelPoints[center=I](A,B,C,I)
+  \tkzLabelPoint(perm){T}
   % 4. Draw the triangle and the circle
   \tkzDrawPolygon(A,B,C)
-  \tkzDrawCircle[color=blue](I,A) % Note: this syntax varies slightly
+  \tkzDrawCircle[color=blue](I,perm) % Note: this syntax varies slightly
 \end{tikzpicture} \\
 \begin{tikzpicture}[]
   % 1. Define the Triangle Vertices
@@ -167,7 +175,7 @@ Choose a~numbered entry point to~begin the~learning process:
   \tkzDrawLine[add=0 and 0.5, color=blue, dashed](C,M)
   
   % Optional: Mark the right angle
-  \tkzMarkRightAngle(C,M,B)
+  \tkzMarkRightAngle[german](B,M,C)
 
 \end{tikzpicture}
 \newpage

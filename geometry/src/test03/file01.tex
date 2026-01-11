@@ -1,0 +1,55 @@
+\documentclass{standalone}
+
+\usepackage[utf8]{inputenc}
+\usepackage[czech]{babel}
+\usepackage{tikz}
+\usepackage{tkz-euclide}
+\usepackage{amsmath, amssymb}
+\usepackage{yhmath}
+
+\begin{document}
+\begin{tikzpicture}
+\tkzDefPoint(0,0){o}
+\tkzDefPoint(180:3){A}
+\tkzDefPoint(220:3){B}
+\tkzDefPoint(320:3){C}
+
+\tkzDefInCircle(A,B,C)
+\tkzGetPoint{middle}
+
+% $\angle BAC$
+% Pre-Arc
+\tkzDefPointBy[homothety=center B ratio 0.2](A)
+\tkzGetPoint{rad1}
+
+\tkzInterLC(A,B)(A,rad1)
+\tkzGetPoint{inter1}
+
+\tkzInterLC(A,C)(A,rad1)
+\tkzGetPoints{}{inter2}
+
+\tkzDrawArc[delta=10](A,inter1)(inter2)
+%\tkzCompasss(A,inter1 A,inter2)
+%\tkzDrawPoint(inter1)
+
+% Middle point
+\tkzInterCC(inter1,inter2)(inter2,inter1)
+
+\tkzGetPoints{}{mid1}
+
+%\tkzDrawPoints(mid1)
+
+\tkzCompasss(inter1,mid1 inter2,mid1)
+\tkzDrawLine[add=0 and .5,dash dot](A,middle)
+
+% $\angle ACB$
+% Pre-Arc
+\tkzDefPointBy[homothety=center B ratio 0.2](C)
+\tkzGetPoint{rad2}
+\inter
+
+\tkzDrawPolygon(A,B,C)
+\tkzAutoLabelPoints[center=o,dist=0.15](A,B,C)
+\tkzDrawCircle(o,A)
+\end{tikzpicture}
+\end{document}
