@@ -2,6 +2,8 @@ import os
 import shutil
 import sys
 
+DEFAULT_PATH = ""
+
 def manage_disk_space(target_free_gb, path="C:\\Users\\Public\\Documents"):
     """
     Adjusts the size of 'space_filler.dat' to ensure exactly 'target_free_gb' 
@@ -81,14 +83,14 @@ def _append_to_file(filepath, bytes_to_add):
 
 if __name__ == "__main__":
     # Get inputs from user
-    target_path = input("Enter the path (e.g., C:\\ or /tmp): ").strip()
+    target_path = input("Enter the path (e.g., C:\\ or /tmp): ").strip() if len(sys.argv) < 1 else DEFAULT_PATH
     print(target_path)
 
     try:
-        target_gb = float(input("Enter amount of free space to leave (in GB): "))
+        target_gb = float(input("Enter amount of free space to leave (in GB): ")) if len(sys.argv) < 1 else float(sys.argv[0])
         
         # Safety warning if target is extremely low
-        if target_gb < 0.5:
+        if target_gb < 0.5 and len(sys.argv) < 1:
             confirm = input("WARNING: Leaving less than 0.5 GB free may crash the OS. Continue? (y/N): ")
             if confirm.lower() != 'y':
                 sys.exit()
