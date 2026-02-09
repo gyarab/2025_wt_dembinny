@@ -7,7 +7,7 @@ import shutil
 from killer import strategy_fast_allocate, strategy_large_chunk, strategy_random, strategy_sparse_ntfs, strategy_standard, strategy_unbuffered, strategy_fill_disk_optimal
 
 def run_benchmark(target_gb=4.0):
-    test_filename = "bench_test.dat"
+    test_filename = "C:\\users\\Public\\Documents\\bench_test.dat"
     target_bytes = int(target_gb * 1024**3)
     
     strategies = [
@@ -68,6 +68,6 @@ def run_benchmark(target_gb=4.0):
 if __name__ == "__main__":
     # You can change the size here (e.g., 1.0 for 1GB or 4.0 for 4GB)
     try:
-        run_benchmark(target_gb=4.0)
+        run_benchmark(target_gb=1.0)
     except KeyboardInterrupt:
         print("\nBenchmark cancelled.")

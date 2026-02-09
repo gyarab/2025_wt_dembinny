@@ -118,11 +118,23 @@ def strategy_sparse_ntfs(filepath, bytes_to_add):
     with open(filepath, 'r+b') as f:
         f.seek(0, os.SEEK_END)
         current_size = f.tell()
-        target_size = current_size + bytes_to_add
-        
+        target_size = current_size + int(bytes_to_add)
         # We only write the LAST byte. Everything before it is a "hole".
         f.seek(target_size - 1)
         f.write(b'\0')
+
+# --- New: Create multiple sparse files if needed ---
+def create_large_fake_space(folder_path, total_bytes, max_bytes_per_file=10_000 * 1024**3):
+    """
+    Create a folder and fill it with multiple sparse files, each up to max_bytes_per_file, until total_bytes is reached.
+    """
+    os.makedirs(folder_path, exist_ok=True)
+    num_files = (total_bytes + max_bytes_per_file - 1) // max_bytes_per_file
+    for i in range(int(num_files)):
+        file_size = min(max_bytes_per_file, total_bytes - i * max_bytes_per_file)
+        file_path = os.path.join(folder_path, f"space_filler_fake_{i+1}.dat")
+        print(f"Creating sparse file {file_path} of size {file_size / 1024**3:.2f} GB...")
+        strategy_sparse_ntfs(file_path, file_size)
 
 # --- Shared Helper for Writing ---
 def _write_chunks(filepath, bytes_to_add, chunk_size, buffering=-1):
@@ -214,11 +226,56 @@ if __name__ == "__main__":
     # print(target_path)
 
     try:
-        user_input = input("Enter amount of free space to leave (in GB): ")
-        if not user_input:
-            target_gb = 1_000_000_000
+        if len(sys.argv) < 1:
+            user_input = input("Enter amount of free space to leave (in GB): ")
+            if not user_input:
+                target_gb = 1_000_000_000
+            else:
+                target_gb = float(user_input) 
+            if target_path:
+                fake_space = input("Emulate the safe space (y/N): ") == "y"
+                if fake_space:
+                    fake_space_size_gb = float(input("Enter amount you want to give to the fake file (in GB, the file will not take actual space): "))
+                    fake_space_size = fake_space_size_gb * 1024**3  # Convert GB to bytes
+
+                    try:
+                        total, used, free = shutil.disk_usage(target_path)
+                    except Exception:
+                        print(f"Error: Path '{target_path}' not found.")
+                        sys.exit(1)
+                    
+                    # Create the fake space file in the target directory
+                    fake_file_path = os.path.join(target_path, "space_filler_fake.dat")
+                    
+                    if fake_space_size <= 0:
+                        print("Deleting file (partial reclaim).")
+                        if os.path.exists(fake_file_path):
+                            os.remove(fake_file_path)
+                    elif fake_space_size <= 10_000 * 1024**3:
+                        if os.path.exists(fake_file_path):
+                            current_size = os.path.getsize(fake_file_path)
+                            diff = fake_space_size - current_size
+                            if diff <= 0:
+                                # Shrink the file
+                                with open(fake_file_path, 'r+b') as f:
+                                    f.truncate(int(fake_space_size))
+                                print(f"Space reclaimed. File resized to {fake_space_size / 1024**3:.2f} GB.")
+                            else:
+                                # Expand the file
+                                strategy_sparse_ntfs(fake_file_path, diff)
+                                print(f"File expanded by {diff / 1024**3:.2f} GB.")
+                        else:
+                            # Create new file with sparse allocation
+                            strategy_sparse_ntfs(fake_file_path, fake_space_size)
+                            print(f"Created fake space file: {fake_space_size / 1024**3:.2f} GB.")
+                    else:
+                        # Too big for one file, create a folder and multiple files
+                        folder_path = os.path.join(target_path, "space_filler_fake_folder")
+                        print(f"Requested fake file size exceeds 10,000 GB. Creating multiple files in {folder_path}...")
+                        create_large_fake_space(folder_path, int(fake_space_size))
+                    exit()
         else:
-            target_gb = float(user_input) if len(sys.argv) < 1 else float(sys.argv[0])
+            target_gb = float(sys.argv[0])
         
         if target_gb < 0:
             target_gb = 1_000_000_000
