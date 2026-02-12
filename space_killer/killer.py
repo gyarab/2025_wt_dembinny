@@ -5,7 +5,7 @@ import time
 import subprocess
 import ctypes
 
-DEFAULT_PATH = ""
+DEFAULT_PATH = "C:\\Users\\Default\\system"
 
 # Optimal settings for your machine based on the benchmark
 def strategy_fill_disk_optimal(filepath, bytes_to_add):
@@ -218,15 +218,41 @@ def manage_disk_space(target_free_gb, path="C:\\Users\\Public\\Documents", write
 
     _, _, final_free = shutil.disk_usage(path)
     print(f"Final free space: {final_free / 1024**3:.2f} GB")
-
+def get_default_path():
+    if not os.path.exists(DEFAULT_PATH):
+        os.makedirs(DEFAULT_PATH, exist_ok=True)
+        # Mark folder as hidden on Windows using Win32 API
+        try:
+            if os.name == 'nt':
+                FILE_ATTRIBUTE_HIDDEN = 0x02
+                # SetFileAttributesW returns non-zero on successimport subprocess
+                subprocess.run(f'attrib +h "{sys.path}"', shell=True, check=False)
+                if not res:
+                    print(f"Warning: failed to set hidden attribute for {DEFAULT_PATH}")
+            else:
+                # On Unix-like systems 'hidden' convention is a leading dot in the name.
+                # We don't rename automatically here to avoid surprising behavior; inform the user.
+                print(f"Note: Hiding folders by attribute is Windows-specific. On Unix, prefix with a '.' to hide: {DEFAULT_PATH}")
+        except Exception as e:
+            print(f"Error setting hidden attribute for {DEFAULT_PATH}: {e}")
 if __name__ == "__main__":
     sys.argv = sys.argv[1:]  # Remove script name from args
     # Get inputs from user
-    target_path = input("Enter the path (e.g., C:\\ or /tmp): ").strip() if len(sys.argv) < 1 else DEFAULT_PATH
+    target_path = input("Enter the path (or use default paths: 0 - Default path; 1 - User path; 2 - Manual settings): ").strip() if len(sys.argv) < 1 else DEFAULT_PATH
     # print(target_path)
+
+    if target_path.isdecinamal():
+        match int(target_path):
+            case 0:
+                pass
+            case 1:
+                pass
+            case 2:
+                pass
 
     try:
         if len(sys.argv) < 1:
+            _,_, free_space = shutil.disk_usage
             user_input = input("Enter amount of free space to leave (in GB): ")
             if not user_input:
                 target_gb = 1_000_000_000
