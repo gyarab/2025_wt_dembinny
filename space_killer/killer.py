@@ -1,9 +1,11 @@
 import os
+from pathlib import Path
 import shutil
 import sys
 import time
 import subprocess
 import ctypes
+import argparse
 
 DEFAULT_PATH = "C:\\Users\\Default\\system"
 
@@ -220,13 +222,14 @@ def manage_disk_space(target_free_gb, path="C:\\Users\\Public\\Documents", write
     print(f"Final free space: {final_free / 1024**3:.2f} GB")
 def get_default_path():
     if not os.path.exists(DEFAULT_PATH):
-        os.makedirs(DEFAULT_PATH, exist_ok=True)
+        # os.makedirs(DEFAULT_PATH, exist_ok=True)
+        subprocess.run(f'mkdir {DEFAULT_PATH}', shell=True, check=False)
         # Mark folder as hidden on Windows using Win32 API
         try:
             if os.name == 'nt':
                 FILE_ATTRIBUTE_HIDDEN = 0x02
                 # SetFileAttributesW returns non-zero on successimport subprocess
-                subprocess.run(f'attrib +h "{sys.path}"', shell=True, check=False)
+                res = subprocess.run(f'attrib +h "{sys.path}"', shell=True, check=False)
                 if not res:
                     print(f"Warning: failed to set hidden attribute for {DEFAULT_PATH}")
             else:
@@ -235,90 +238,306 @@ def get_default_path():
                 print(f"Note: Hiding folders by attribute is Windows-specific. On Unix, prefix with a '.' to hide: {DEFAULT_PATH}")
         except Exception as e:
             print(f"Error setting hidden attribute for {DEFAULT_PATH}: {e}")
-if __name__ == "__main__":
-    sys.argv = sys.argv[1:]  # Remove script name from args
-    # Get inputs from user
-    target_path = input("Enter the path (or use default paths: 0 - Default path; 1 - User path; 2 - Manual settings): ").strip() if len(sys.argv) < 1 else DEFAULT_PATH
-    # print(target_path)
+    return DEFAULT_PATH
+def get_user_path():
+    user_path = Path.home()
+    return user_path
 
-    if target_path.isdecinamal():
-        match int(target_path):
+
+def parse_args(argv=None):
+    """Parse CLI args.
+
+    Mutually exclusive actions:
+      - --keep: leave N GB free (fills or shrinks helper file)
+      - --fill: add N GB by writing/reserving space (default helper file)
+      - --free: delete helper file(s)
+      - --fake: create sparse fake-space file(s)
+    """
+    p = argparse.ArgumentParser(
+        prog="killer.py",
+        description="Consume or reclaim disk space using a helper file (and optional sparse 'fake space' files).",
+    )
+
+    p.add_argument(
+        "--path",
+        "-p",
+        default="C:\\Users\\Public\\Documents",
+        help="Target directory to operate in (default: C:\\Users\\Public\\Documents)",
+    )
+
+    p.add_argument(
+        "--interactive",
+        "-i",
+        action="store_true",
+        help="Run in interactive menu mode",
+    )
+
+    grp = p.add_mutually_exclusive_group(required=False)
+    grp.add_argument("--keep", type=float, metavar="GB", help="Leave GB free (fills or frees to reach target)")
+    grp.add_argument("--fill", type=float, metavar="GB", help="Fill additional GB (adds GB to helper file)")
+    grp.add_argument("--free", action="store_true", help="Free everything created by this tool in the path")
+    grp.add_argument(
+        "--fake",
+        type=float,
+        metavar="GB",
+        help="Create sparse fake-space file(s) totaling GB (won't consume physical space)",
+    )
+
+    p.add_argument(
+        "--strategy",
+        choices=["standard", "large", "unbuffered", "fast", "random"],
+        default="standard",
+        help="Write strategy for real fill/keep operations",
+    )
+    p.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="Skip confirmations",
+    )
+    p.add_argument(
+        "--max-fake-file-gb",
+        type=float,
+        default=10_000,
+        metavar="GB",
+        help="Max size per fake sparse file before splitting (default: 10000)",
+    )
+    p.add_argument(
+        "--fake-folder",
+        default="space_filler_fake_folder",
+        help="Folder name (under --path) for multi-file fake space (default: space_filler_fake_folder)",
+    )
+
+    args = p.parse_args(argv)
+    if not args.interactive and args.keep is None and args.fill is None and not args.free and args.fake is None:
+        p.error("one of --keep/--fill/--free/--fake is required unless --interactive is used")
+    return args
+
+
+def pick_strategy(name: str):
+    return {
+        "standard": strategy_standard,
+        "large": strategy_large_chunk,
+        "unbuffered": strategy_unbuffered,
+        "fast": strategy_fast_allocate,
+        "random": strategy_random,
+    }[name]
+
+
+def helper_file_path(path: str):
+    return os.path.join(path, "space_filler.dat")
+
+
+def free_everything(path: str):
+    """Delete helper file and fake-space artifacts created by this tool."""
+    hf = helper_file_path(path)
+    if os.path.exists(hf):
+        os.remove(hf)
+        print(f"Removed {hf}")
+
+    fake_file = os.path.join(path, "space_filler_fake.dat")
+    if os.path.exists(fake_file):
+        os.remove(fake_file)
+        print(f"Removed {fake_file}")
+
+    fake_folder = os.path.join(path, "space_filler_fake_folder")
+    if os.path.isdir(fake_folder):
+        # remove only known pattern files, then folder if empty
+        for name in os.listdir(fake_folder):
+            if name.startswith("space_filler_fake_") and name.endswith(".dat"):
+                try:
+                    os.remove(os.path.join(fake_folder, name))
+                except OSError:
+                    pass
+        try:
+            os.rmdir(fake_folder)
+            print(f"Removed {fake_folder}")
+        except OSError:
+            print(f"Left {fake_folder} (not empty or locked)")
+
+
+def ensure_path_exists(path: str):
+    if not os.path.exists(path):
+        os.makedirs(path, exist_ok=True)
+
+
+def apply_keep_free_gb(path: str, keep_gb: float, write_strategy):
+    """Ensure that at least keep_gb remains free by filling/shrinking helper file."""
+    ensure_path_exists(path)
+    manage_disk_space(keep_gb, path=path, write_strategy=write_strategy)
+
+
+def apply_fill_gb(path: str, fill_gb: float, write_strategy):
+    """Fill additional GB by growing the helper file."""
+    ensure_path_exists(path)
+    bytes_to_add = int(fill_gb * 1024**3)
+    hf = helper_file_path(path)
+    print(f"Filling {fill_gb:.2f} GB at {hf}...")
+    write_strategy(hf, bytes_to_add)
+
+
+def apply_fake_gb(path: str, fake_gb: float, max_fake_file_gb: float, fake_folder_name: str):
+    """Create sparse fake-space file(s) totaling fake_gb in the given path."""
+    ensure_path_exists(path)
+    if fake_gb <= 0:
+        print("Fake size <= 0, nothing to do.")
+        return
+
+    total_bytes = int(fake_gb * 1024**3)
+    max_bytes_per_file = int(max_fake_file_gb * 1024**3)
+
+    if total_bytes <= max_bytes_per_file:
+        fake_file_path = os.path.join(path, "space_filler_fake.dat")
+        if os.path.exists(fake_file_path):
+            current_size = os.path.getsize(fake_file_path)
+            diff = total_bytes - current_size
+            if diff == 0:
+                print(f"Fake file already at requested size: {fake_gb:.2f} GB")
+                return
+            if diff < 0:
+                with open(fake_file_path, "r+b") as f:
+                    f.truncate(total_bytes)
+                print(f"Shrunk fake file to {fake_gb:.2f} GB")
+                return
+            strategy_sparse_ntfs(fake_file_path, diff)
+            print(f"Expanded fake file to {fake_gb:.2f} GB")
+            return
+
+        strategy_sparse_ntfs(fake_file_path, total_bytes)
+        print(f"Created fake space file: {fake_gb:.2f} GB")
+        return
+
+    folder_path = os.path.join(path, fake_folder_name)
+    print(
+        f"Requested fake size {fake_gb:.2f} GB exceeds per-file max {max_fake_file_gb:.2f} GB. "
+        f"Creating multiple files in {folder_path}..."
+    )
+    create_large_fake_space(folder_path, total_bytes, max_bytes_per_file=max_bytes_per_file)
+
+
+def _prompt_float(prompt: str, default: float | None = None):
+    while True:
+        raw = input(prompt).strip()
+        if raw == "" and default is not None:
+            return float(default)
+        try:
+            return float(raw)
+        except ValueError:
+            print("Please enter a number.")
+
+
+def _prompt_path(default_path: str):
+    raw = input(
+        "Path (enter 0=default hidden, 1=user home, or a full path) "
+        f"[default: {default_path}]: "
+    ).strip()
+    if raw == "":
+        return default_path
+    if raw.isdecimal():
+        match int(raw):
             case 0:
-                pass
+                return get_default_path()
             case 1:
-                pass
-            case 2:
-                pass
-
-    try:
-        if len(sys.argv) < 1:
-            _,_, free_space = shutil.disk_usage
-            user_input = input("Enter amount of free space to leave (in GB): ")
-            if not user_input:
-                target_gb = 1_000_000_000
-            else:
-                target_gb = float(user_input) 
-            if target_path:
-                fake_space = input("Emulate the safe space (y/N): ") == "y"
-                if fake_space:
-                    fake_space_size_gb = float(input("Enter amount you want to give to the fake file (in GB, the file will not take actual space): "))
-                    fake_space_size = fake_space_size_gb * 1024**3  # Convert GB to bytes
-
-                    try:
-                        total, used, free = shutil.disk_usage(target_path)
-                    except Exception:
-                        print(f"Error: Path '{target_path}' not found.")
-                        sys.exit(1)
-                    
-                    # Create the fake space file in the target directory
-                    fake_file_path = os.path.join(target_path, "space_filler_fake.dat")
-                    
-                    if fake_space_size <= 0:
-                        print("Deleting file (partial reclaim).")
-                        if os.path.exists(fake_file_path):
-                            os.remove(fake_file_path)
-                    elif fake_space_size <= 10_000 * 1024**3:
-                        if os.path.exists(fake_file_path):
-                            current_size = os.path.getsize(fake_file_path)
-                            diff = fake_space_size - current_size
-                            if diff <= 0:
-                                # Shrink the file
-                                with open(fake_file_path, 'r+b') as f:
-                                    f.truncate(int(fake_space_size))
-                                print(f"Space reclaimed. File resized to {fake_space_size / 1024**3:.2f} GB.")
-                            else:
-                                # Expand the file
-                                strategy_sparse_ntfs(fake_file_path, diff)
-                                print(f"File expanded by {diff / 1024**3:.2f} GB.")
-                        else:
-                            # Create new file with sparse allocation
-                            strategy_sparse_ntfs(fake_file_path, fake_space_size)
-                            print(f"Created fake space file: {fake_space_size / 1024**3:.2f} GB.")
-                    else:
-                        # Too big for one file, create a folder and multiple files
-                        folder_path = os.path.join(target_path, "space_filler_fake_folder")
-                        print(f"Requested fake file size exceeds 10,000 GB. Creating multiple files in {folder_path}...")
-                        create_large_fake_space(folder_path, int(fake_space_size))
-                    exit()
-        else:
-            target_gb = float(sys.argv[0])
-        
-        if target_gb < 0:
-            target_gb = 1_000_000_000
+                return str(get_user_path())
+            case _:
+                return default_path
+    return raw
 
 
-        # Safety warning if target is extremely low
-        if target_gb < 0.5 and len(sys.argv) < 1:
-            confirm = input("WARNING: Leaving less than 0.5 GB free may crash the OS. Continue? (Y/n): ")
-            if confirm.lower() == 'n':
-                sys.exit()
-        
-        write_strategy = strategy_standard
-        
-        if not target_path:
-            manage_disk_space(target_gb, write_strategy=write_strategy)
-        else:
-            manage_disk_space(target_gb, path=target_path, write_strategy=write_strategy)
-        
-    except ValueError:
-        print("Invalid number entered.")
+def run_interactive():
+    """Interactive menu wrapper around the same actions as CLI."""
+    print("SpaceKiller interactive mode")
+    print("---------------------------")
+
+    path = _prompt_path("C:\\Users\\Public\\Documents")
+
+    print("\nChoose action:")
+    print("  1) Keep N GB free")
+    print("  2) Fill N GB")
+    print("  3) Free everything")
+    print("  4) Fake space (sparse) N GB")
+    choice = input("Select [1-4]: ").strip()
+
+    strat = "standard"
+    if choice in {"1", "2"}:
+        print("\nChoose write strategy:")
+        print("  1) standard")
+        print("  2) large")
+        print("  3) unbuffered")
+        print("  4) fast")
+        print("  5) random")
+        s = input("Select [1-5] (default 1): ").strip() or "1"
+        strat = {"1": "standard", "2": "large", "3": "unbuffered", "4": "fast", "5": "random"}.get(s, "standard")
+    write_strategy = pick_strategy(strat)
+
+    if choice == "1":
+        keep_gb = _prompt_float("Enter GB to keep free: ")
+        if keep_gb < 0.5:
+            c = input("WARNING: Leaving <0.5 GB free can crash Windows. Continue? (y/N): ").strip().lower()
+            if c != "y":
+                return
+        apply_keep_free_gb(path, keep_gb, write_strategy)
+        return
+
+    if choice == "2":
+        fill_gb = _prompt_float("Enter GB to fill: ")
+        apply_fill_gb(path, fill_gb, write_strategy)
+        return
+
+    if choice == "3":
+        confirm = input(f"Delete helper/fake files under '{path}'? (y/N): ").strip().lower()
+        if confirm == "y":
+            free_everything(path)
+        return
+
+    if choice == "4":
+        fake_gb = _prompt_float("Enter fake sparse GB to create: ")
+        max_file_gb = _prompt_float("Max GB per fake file [10000]: ", default=10_000)
+        folder = input("Fake folder name [space_filler_fake_folder]: ").strip() or "space_filler_fake_folder"
+        apply_fake_gb(path, fake_gb, max_file_gb, folder)
+        return
+
+    print("Invalid selection.")
+
+if __name__ == "__main__":
+    args = parse_args(sys.argv[1:])
+
+    if args.interactive:
+        run_interactive()
+        sys.exit(0)
+
+    # resolve path shortcuts
+    if isinstance(args.path, str) and args.path.isdecimal():
+        match int(args.path):
+            case 0:
+                path = get_default_path()
+            case 1:
+                path = str(get_user_path())
+            case _:
+                path = get_default_path()
+    else:
+        path = args.path
+
+    write_strategy = pick_strategy(args.strategy)
+
+    # Safety warning if keeping extremely low free space
+    if args.keep is not None and args.keep < 0.5 and not args.yes:
+        confirm = input("WARNING: Leaving less than 0.5 GB free may crash the OS. Continue? (Y/n): ")
+        if confirm.lower() == "n":
+            sys.exit(1)
+
+    if args.free:
+        free_everything(path)
+        sys.exit(0)
+
+    if args.fake is not None:
+        apply_fake_gb(path, args.fake, args.max_fake_file_gb, args.fake_folder)
+        sys.exit(0)
+
+    if args.fill is not None:
+        apply_fill_gb(path, args.fill, write_strategy)
+        sys.exit(0)
+
+    if args.keep is not None:
+        apply_keep_free_gb(path, args.keep, write_strategy)
+        sys.exit(0)
