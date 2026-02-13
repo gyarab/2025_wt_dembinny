@@ -1,0 +1,7 @@
+# Generated files
+file_giver/index.html
+
+# Main directory (generated during deployment)
+main/microsite/
+main/prvni-web/
+main/file_giver/

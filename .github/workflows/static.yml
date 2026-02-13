@@ -31,13 +31,27 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      
+      - name: Generate file listing
+        run: |
+          chmod +x file_giver/generate_listing.sh
+          ./file_giver/generate_listing.sh
+      
+      - name: Copy content to main directory
+        run: |
+          cp -r microsite main/
+          cp -r prvni_web main/prvni-web
+          cp -r file_giver main/
+      
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: 'microsite'
+          # Upload main directory
+          path: 'main'
+      
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
