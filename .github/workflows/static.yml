@@ -42,6 +42,12 @@ jobs:
           cp -r microsite main/
           cp -r prvni_web main/prvni-web
           cp -r file_giver main/
+          cp -r jsgame main/
+          cp -r kurzy main/
+          cp -r path_finder main/
+          cp -r space_killer main/
+          cp -r vuejs main/
+          cp -r zelva main/
       
       - name: Setup Pages
         uses: actions/configure-pages@v5

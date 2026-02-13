@@ -94,6 +94,13 @@ get_icon() {
 # Scan directories and files
 find "$SCAN_DIR" -mindepth 1 -maxdepth 1 -type d | grep -v "^\./\." | grep -v "^\.\/main$" | grep -v "^\.\/file_giver$" | sort | while IFS= read -r dir; do
     dirname=$(basename "$dir")
+    
+    # Map directory names to their deployed names
+    deployed_dirname="$dirname"
+    if [ "$dirname" = "prvni_web" ]; then
+        deployed_dirname="prvni-web"
+    fi
+    
     echo "    <div class=\"directory\">" >> "$OUTPUT_FILE"
     echo "        <h2>📁 $dirname/</h2>" >> "$OUTPUT_FILE"
     echo "        <ul class=\"file-list\">" >> "$OUTPUT_FILE"
@@ -102,9 +109,8 @@ find "$SCAN_DIR" -mindepth 1 -maxdepth 1 -type d | grep -v "^\./\." | grep -v "^
     if [ -d "$dir" ]; then
         find "$dir" -maxdepth 1 -type f | sort | while IFS= read -r file; do
             filename=$(basename "$file")
-            relpath="${file#./}"
             icon=$(get_icon "$filename")
-            echo "            <li><span class=\"icon\">$icon</span><a href=\"../$relpath\">$filename</a></li>" >> "$OUTPUT_FILE"
+            echo "            <li><span class=\"icon\">$icon</span><a href=\"../$deployed_dirname/$filename\">$filename</a></li>" >> "$OUTPUT_FILE"
         done
     fi
     
