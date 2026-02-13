@@ -96,10 +96,15 @@ find "$SCAN_DIR" -mindepth 1 -maxdepth 1 -type d | grep -v "^\./\." | grep -v "^
     dirname=$(basename "$dir")
     
     # Map directory names to their deployed names
-    deployed_dirname="$dirname"
-    if [ "$dirname" = "prvni_web" ]; then
-        deployed_dirname="prvni-web"
-    fi
+    # Add more mappings here if directories are renamed during deployment
+    case "$dirname" in
+        prvni_web)
+            deployed_dirname="prvni-web"
+            ;;
+        *)
+            deployed_dirname="$dirname"
+            ;;
+    esac
     
     echo "    <div class=\"directory\">" >> "$OUTPUT_FILE"
     echo "        <h2>📁 $dirname/</h2>" >> "$OUTPUT_FILE"
