@@ -92,7 +92,7 @@ get_icon() {
 }
 
 # Scan directories and files
-for dir in $(find "$SCAN_DIR" -mindepth 1 -maxdepth 1 -type d | grep -v "^\./\." | grep -v "^\.\/main$" | grep -v "^\.\/file_giver$" | sort); do
+find "$SCAN_DIR" -mindepth 1 -maxdepth 1 -type d | grep -v "^\./\." | grep -v "^\.\/main$" | grep -v "^\.\/file_giver$" | sort | while IFS= read -r dir; do
     dirname=$(basename "$dir")
     echo "    <div class=\"directory\">" >> "$OUTPUT_FILE"
     echo "        <h2>📁 $dirname/</h2>" >> "$OUTPUT_FILE"
@@ -100,7 +100,7 @@ for dir in $(find "$SCAN_DIR" -mindepth 1 -maxdepth 1 -type d | grep -v "^\./\."
     
     # List files in directory
     if [ -d "$dir" ]; then
-        find "$dir" -maxdepth 1 -type f | sort | while read -r file; do
+        find "$dir" -maxdepth 1 -type f | sort | while IFS= read -r file; do
             filename=$(basename "$file")
             relpath="${file#./}"
             icon=$(get_icon "$filename")
