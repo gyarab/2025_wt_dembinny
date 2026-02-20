@@ -1,0 +1,61 @@
+# Workflow for deploying PR previews to GitHub Pages
+name: Deploy PR Preview
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - closed
+
+# Prevent concurrent deployments for the same PR
+concurrency: preview-${{ github.ref }}
+
+# Required permissions
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      # Only build if we're not closing the PR
+      - name: Generate file listing
+        if: github.event.action != 'closed'
+        run: |
+          chmod +x file_giver/generate_listing.sh
+          ./file_giver/generate_listing.sh
+      
+      - name: Copy content to main directory
+        if: github.event.action != 'closed'
+        run: |
+          chmod +x .github/scripts/copy-dirs.sh
+          ./.github/scripts/copy-dirs.sh
+      
+      # Add PR preview banner (different from staging)
+      - name: Add PR preview banner
+        if: github.event.action != 'closed'
+        run: |
+          # Create a distinct banner for PR previews
+          BANNER='<div style="position:fixed;top:0;left:0;right:0;background:#7c3aed;color:white;padding:10px;text-align:center;z-index:9999;font-weight:bold;box-shadow:0 2px 5px rgba(0,0,0,0.2);">🔍 PR #${{ github.event.number }} PREVIEW - This is a pull request preview</div>'
+          
+          find main -type f -name "*.html" | while read -r file; do
+            if grep -q "<body" "$file"; then
+              sed -i "/<body/a\\
+$BANNER" "$file"
+              echo "  ✓ Added PR preview banner to: $file"
+            fi
+          done
+      
+      - name: Deploy PR Preview
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: ./main/
+          preview-branch: gh-pages
+          umbrella-dir: pr-preview
+          action: auto

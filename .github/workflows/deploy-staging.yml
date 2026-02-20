@@ -1,11 +1,11 @@
-# Simple workflow for deploying static content to GitHub Pages (PRODUCTION)
-name: Deploy production to Pages
+# Workflow for deploying staging/preview content to GitHub Pages
+name: Deploy staging to Pages
 
 on:
-  # Runs on pushes targeting the default branch
+  # Runs on pushes to staging branch
   push:
-    branches: ["main"]
-
+    branches: ["staging"]
+  
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -13,15 +13,14 @@ on:
 permissions:
   contents: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Allow only one concurrent deployment per environment
 concurrency:
-  group: "pages-production"
-  cancel-in-progress: false
+  group: "pages-staging"
+  cancel-in-progress: true
 
 jobs:
-  # Single deploy job for production
-  deploy:
+  # Build and deploy job
+  deploy-staging:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -36,6 +35,12 @@ jobs:
         run: |
           chmod +x .github/scripts/copy-dirs.sh
           ./.github/scripts/copy-dirs.sh
+      
+      # Add a staging banner to all HTML files
+      - name: Add staging banner
+        run: |
+          chmod +x .github/scripts/add-staging-banner.sh
+          ./.github/scripts/add-staging-banner.sh
       
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4

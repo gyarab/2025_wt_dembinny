@@ -1,0 +1,16 @@
+# Deployment directory configuration
+# List of directories to copy from root to main/ during GitHub Pages deployment
+# Format: source_dir:target_dir
+# If target_dir is omitted, source_dir name is used
+# Lines starting with # are comments
+# Empty lines are ignored
+
+microsite
+prvni_web:prvni-web
+file_giver
+jsgame
+kurzy
+path_finder
+space_killer
+vuejs
+zelva
