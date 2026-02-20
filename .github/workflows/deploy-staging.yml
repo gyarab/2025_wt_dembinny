@@ -1,11 +1,11 @@
-# Simple workflow for deploying static content to GitHub Pages (PRODUCTION)
-name: Deploy production to Pages
+# Workflow for deploying staging/preview content to GitHub Pages
+name: Deploy staging to Pages
 
 on:
-  # Runs on pushes targeting the default branch
+  # Runs on pushes to staging branch
   push:
-    branches: ["main"]
-
+    branches: ["staging"]
+  
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -15,17 +15,16 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Allow only one concurrent deployment per environment
 concurrency:
-  group: "pages-production"
-  cancel-in-progress: false
+  group: "pages-staging"
+  cancel-in-progress: true
 
 jobs:
-  # Single deploy job for production
-  deploy:
+  # Build and deploy job
+  deploy-staging:
     environment:
-      name: github-pages
+      name: github-pages-staging
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
@@ -41,6 +40,14 @@ jobs:
         run: |
           chmod +x .github/scripts/copy-dirs.sh
           ./.github/scripts/copy-dirs.sh
+      
+      # Add a staging banner to the main index page
+      - name: Add staging banner
+        run: |
+          sed -i '/<body>/a \
+          <div style="position:fixed;top:0;left:0;right:0;background:#ff6b00;color:white;padding:10px;text-align:center;z-index:9999;font-weight:bold;">\
+          ⚠️ STAGING ENVIRONMENT - This is a preview, not production\
+          </div>' main/index.html
       
       - name: Setup Pages
         uses: actions/configure-pages@v5
