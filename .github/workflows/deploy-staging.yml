@@ -41,13 +41,11 @@ jobs:
           chmod +x .github/scripts/copy-dirs.sh
           ./.github/scripts/copy-dirs.sh
       
-      # Add a staging banner to the main index page
+      # Add a staging banner to all HTML files
       - name: Add staging banner
         run: |
-          sed -i '/<body>/a \
-          <div style="position:fixed;top:0;left:0;right:0;background:#ff6b00;color:white;padding:10px;text-align:center;z-index:9999;font-weight:bold;">\
-          ⚠️ STAGING ENVIRONMENT - This is a preview, not production\
-          </div>' main/index.html
+          chmod +x .github/scripts/add-staging-banner.sh
+          ./.github/scripts/add-staging-banner.sh
       
       - name: Setup Pages
         uses: actions/configure-pages@v5
