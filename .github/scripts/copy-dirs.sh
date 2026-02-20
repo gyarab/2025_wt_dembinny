@@ -47,9 +47,7 @@ while IFS= read -r line || [ -n "$line" ]; do
     
     # Copy directory
     echo "Copying $source_dir -> $TARGET_DIR/$target_name"
-    cp -r "$source_dir" "$TARGET_DIR/$target_name"
-    
-    if [ $? -eq 0 ]; then
+    if cp -r "$source_dir" "$TARGET_DIR/$target_name"; then
         echo "  ✓ Successfully copied $source_dir"
     else
         echo "  ✗ Failed to copy $source_dir"
