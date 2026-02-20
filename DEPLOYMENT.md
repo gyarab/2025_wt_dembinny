@@ -1,24 +1,79 @@
 # Deployment Workflow Guide
 
-This repository uses a two-environment deployment strategy for GitHub Pages:
+This repository uses a multi-environment deployment strategy for GitHub Pages:
 
 ## Environments
 
 ### 1. Production Environment
 - **Branch**: `main`
 - **Workflow**: `.github/workflows/static.yml`
-- **URL**: Main GitHub Pages URL
+- **URL**: Main GitHub Pages URL (root)
 - **Purpose**: Live production site
+- **Deployment**: To `gh-pages` branch (root directory)
 
-### 2. Staging/Preview Environment
+### 2. Staging Environment
 - **Branch**: `staging`
 - **Workflow**: `.github/workflows/deploy-staging.yml`
-- **Environment**: `github-pages-staging` (GitHub deployment environment)
 - **Purpose**: Preview and test changes before going to production
 - **Visual Indicator**: Orange warning banner at the top of every page
+- **Deployment**: To `gh-pages` branch (root directory, replaces production temporarily)
 - **Note**: Deployments to staging will temporarily replace the production site. To restore production, redeploy from main.
 
+### 3. PR Preview Environment (NEW!)
+- **Trigger**: Pull Requests
+- **Workflow**: `.github/workflows/deploy-pr-preview.yml`
+- **URL**: `https://[owner].github.io/[repo]/pr-preview/pr-[number]/`
+- **Purpose**: Automatic preview for each pull request
+- **Visual Indicator**: Purple "PR Preview" banner at the top of every page
+- **Deployment**: To `gh-pages` branch in `pr-preview/pr-[number]/` subdirectory
+- **Benefits**:
+  - Each PR gets its own unique preview URL
+  - Multiple PRs can have previews simultaneously
+  - Automatic comment on PR with preview link and QR code
+  - Automatic cleanup when PR is closed
+  - Does NOT interfere with production or other PRs
+
 ## How to Use
+
+### Working with Pull Request Previews (Recommended for Collaboration)
+
+1. **Create a feature branch and make changes:**
+   ```bash
+   git checkout -b feature/my-feature
+   # Edit your files
+   git add .
+   git commit -m "Add new feature"
+   git push origin feature/my-feature
+   ```
+
+2. **Create a Pull Request on GitHub:**
+   - Go to the repository on GitHub
+   - Click "Pull Requests" → "New Pull Request"
+   - Select your feature branch
+   - Create the pull request
+
+3. **Automatic Preview Deployment:**
+   - The PR Preview workflow automatically runs
+   - A comment is posted on your PR with:
+     - Direct link to the preview
+     - QR code for mobile testing
+   - Preview URL: `https://gyarab.github.io/2025_wt_dembinny/pr-preview/pr-[NUMBER]/`
+
+4. **Update the Preview:**
+   - Make more commits to your feature branch
+   - Push to GitHub
+   - The preview automatically updates
+   - The PR comment updates with the new deployment info
+
+5. **Test and Review:**
+   - Share the preview URL with team members
+   - Test on different devices (use QR code for mobile)
+   - Get feedback directly on the PR
+
+6. **Merge to Production:**
+   - When the PR is approved and merged to `main`
+   - Production automatically deploys
+   - The PR preview is automatically cleaned up
 
 ### Testing Changes on Staging
 
@@ -77,48 +132,89 @@ git push origin main
 
 ### Production Workflow (`static.yml`)
 - Triggered by pushes to `main` branch
-- Deploys to production GitHub Pages environment
+- Deploys to `gh-pages` branch (root directory)
 - No visual indicators (clean production site)
+- Preserves `pr-preview/` directory (doesn't delete PR previews)
 
 ### Staging Workflow (`deploy-staging.yml`)
 - Triggered by pushes to `staging` branch
-- Deploys to staging GitHub Pages environment
+- Deploys to `gh-pages` branch (root directory)
 - Adds orange warning banner to indicate staging
 - Can be cancelled if newer push comes in
+- Temporarily replaces production
+
+### PR Preview Workflow (`deploy-pr-preview.yml`) - NEW!
+- Triggered by pull request events (opened, updated, closed)
+- Deploys to `gh-pages` branch in `pr-preview/pr-[number]/` subdirectory
+- Adds purple "PR Preview" banner to indicate PR preview
+- Posts automatic comment on PR with preview link and QR code
+- Automatically cleans up when PR is closed
+- Multiple PR previews can coexist simultaneously
 
 ## Benefits
 
-✅ **No spam commits to main**: Test on staging branch first, only merge when ready
-✅ **Safe experimentation**: Break things on staging branch, not production
-✅ **Visual distinction**: Orange banner clearly shows staging deployment
+✅ **PR Previews**: Each pull request gets its own automatic preview URL
+✅ **No conflicts**: Multiple PRs can have previews at the same time
+✅ **Easy collaboration**: Share preview links with team members for review
+✅ **Mobile testing**: QR codes in PR comments for quick mobile access
+✅ **Automatic cleanup**: Previews removed when PRs are closed
+✅ **No spam commits to main**: Test on PR previews or staging first
+✅ **Safe experimentation**: Break things on PR previews, not production
+✅ **Visual distinction**: Different colored banners for production/staging/PR previews
 ✅ **Easy rollback**: Keep main branch stable, redeploy to restore production
 ✅ **Workflow testing**: Test the entire build and deployment process before production
 ✅ **Build validation**: Ensure no errors before merging to main
 
-**Note**: Since GitHub Pages (with GitHub Actions source) can only have one active deployment at the same URL, staging and production cannot coexist simultaneously. Staging temporarily replaces production until you redeploy from main. This is still valuable for testing the deployment process and catching build errors before they reach the main branch.
+**Note**: With PR previews, each pull request gets its own subdirectory, so multiple PRs can have previews simultaneously without conflicts. However, staging and production still share the root URL, so staging temporarily replaces production.
 
 ## GitHub Pages Configuration
 
-To enable both production and staging environments:
+**IMPORTANT**: To use PR previews, you must configure GitHub Pages to deploy from a branch:
 
-1. Go to Settings → Pages
-2. Source should be set to "GitHub Actions"
-3. GitHub will create separate deployment environments automatically:
-   - `github-pages` for production (from main branch)
-   - `github-pages-staging` for staging (from staging branch)
+### Required Setup Steps
 
-**Important**: Both environments will deploy to the same GitHub Pages URL. However, GitHub creates separate "environments" in the repository that you can configure with different protection rules and secrets. The staging deployment will **replace** the production deployment on the Pages URL when you push to staging. To see production again, redeploy from main.
+1. **Go to Settings → Pages**
+2. **Set Source to "Deploy from a branch"**:
+   - Under "Build and deployment"
+   - Source: **Deploy from a branch** (NOT "GitHub Actions")
+   - Branch: Select `gh-pages` and `/ (root)`
+   - Click Save
 
-**Recommended Setup for True Separate URLs**:
-For truly separate staging and production URLs, you would need:
-- A separate repository for staging, OR
-- Deploy staging to a subdirectory or different branch in Pages settings
+3. **Enable workflow permissions**:
+   - Go to Settings → Actions → General
+   - Under "Workflow permissions"
+   - Select "Read and write permissions"
+   - Check "Allow GitHub Actions to create and approve pull requests"
+   - Click Save
 
-The current implementation provides a workflow for testing deployments before promoting to main, but both deploy to the same URL. This is useful for:
-- Testing the build process
-- Verifying workflows work correctly  
-- Checking deployment logs
-- Ensuring no build errors before merging to main
+### Why These Settings?
+
+- **Branch deployment**: PR preview action requires deploying to a branch (`gh-pages`)
+- **Write permissions**: Workflows need to push to the `gh-pages` branch
+- The `gh-pages` branch will be automatically created on first deployment
+
+### Deployment Structure on gh-pages Branch
+
+```
+gh-pages branch:
+├── index.html                    (Production from main)
+├── microsite/                    (Production files)
+├── prvni-web/                    (Production files)
+├── file_giver/                   (Production files)
+└── pr-preview/                   (PR previews directory)
+    ├── pr-1/                     (Preview for PR #1)
+    │   ├── index.html
+    │   └── ...
+    ├── pr-2/                     (Preview for PR #2)
+    │   ├── index.html
+    │   └── ...
+    └── ...
+```
+
+Each environment deploys to a different location:
+- **Production** (`main` branch) → `gh-pages` root
+- **Staging** (`staging` branch) → `gh-pages` root (replaces production temporarily)
+- **PR Previews** → `gh-pages/pr-preview/pr-[number]/` (unique per PR)
 
 ## Troubleshooting
 
@@ -126,6 +222,12 @@ The current implementation provides a workflow for testing deployments before pr
 - Check the Actions tab for workflow runs
 - Ensure the workflow file exists at `.github/workflows/deploy-staging.yml`
 - Check if there are any errors in the workflow run
+
+**Q: PR preview deployment failed**
+- Ensure GitHub Pages is set to "Deploy from a branch" (not "GitHub Actions")
+- Check that workflow permissions are set to "Read and write"
+- Verify the `gh-pages` branch exists (it's created automatically on first deploy)
+- Look at the Actions tab for error messages
 
 **Q: Can I view staging and production at the same time?**
 - No, GitHub Pages (with Actions source) allows only one active deployment

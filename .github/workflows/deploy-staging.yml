@@ -9,11 +9,9 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+# Required permissions for branch-based deployment
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 # Allow only one concurrent deployment per environment
 concurrency:
@@ -23,9 +21,6 @@ concurrency:
 jobs:
   # Build and deploy job
   deploy-staging:
-    environment:
-      name: github-pages-staging
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -47,15 +42,10 @@ jobs:
           chmod +x .github/scripts/add-staging-banner.sh
           ./.github/scripts/add-staging-banner.sh
       
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          # Upload main directory
-          path: 'main'
-      
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: main
+          branch: gh-pages
+          clean-exclude: pr-preview/
+          force: false
